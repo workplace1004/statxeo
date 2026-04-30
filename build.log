@@ -1,0 +1,56 @@
+
+> my-project@0.1.0 build /Users/thebradybunch/projects/TEXTPLAT/apps/STATXEO
+> next build
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local, .env
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 5.8s
+  Skipping validation of types
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/13) ...
+  Generating static pages using 7 workers (3/13) 
+  Generating static pages using 7 workers (6/13) 
+  Generating static pages using 7 workers (9/13) 
+✓ Generating static pages using 7 workers (13/13) in 265.5ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /about
+├ ƒ /affiliate
+├ ○ /affiliate/help
+├ ƒ /affiliate/login
+├ ƒ /api/affiliate/admin/access
+├ ƒ /api/affiliate/admin/payout-export
+├ ƒ /api/affiliate/ledger
+├ ƒ /api/affiliate/links
+├ ƒ /api/affiliate/overview
+├ ƒ /api/affiliate/payouts
+├ ƒ /api/customer/documents
+├ ƒ /api/customer/documents/download
+├ ƒ /api/customer/orders
+├ ƒ /api/customer/overview
+├ ƒ /api/customer/support/messages
+├ ƒ /api/customer/support/thread
+├ ƒ /api/customer/workflow
+├ ƒ /api/statxeo/boost-checkout
+├ ƒ /api/statxeo/checkout
+├ ƒ /api/statxeo/checkout-combined
+├ ƒ /customer
+├ ƒ /customer/login
+├ ○ /faq
+├ ○ /help
+├ ƒ /llms.txt
+├ ○ /privacy-policy
+├ ○ /robots.txt
+├ ○ /sitemap.xml
+├ ○ /statxeo/product-terms
+└ ○ /statxeo/terms
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

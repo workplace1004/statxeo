@@ -1,0 +1,23 @@
+{
+  "name": "Statxeo",
+  "short_name": "Statxeo",
+  "description": "High-converting SEO websites with lead routing.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "icons": [
+    {
+      "src": "/blackNBG.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/whiteNBG.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

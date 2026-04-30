@@ -1,0 +1,66 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build-gallery-check",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"build"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "rewrite-pricing-glass",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"-e",
+				"const fs=require('fs');const file='components/sections/pricing.tsx';const content=String.raw`\"use client\";\n\nimport { Check } from \"lucide-react\";\nimport { motion } from \"motion/react\";\nimport DepthCard from \"@/components/react-bits/depth-card\";\nimport SquircleShift from \"@/components/react-bits/squircle-shift\";\nimport { WEBSITE_PACKAGES } from \"@/lib/statxeo/catalog\";\nimport { dispatchPurchaseIntent } from \"@/lib/statxeo/purchase-intent\";\n\nconst websitePlans = WEBSITE_PACKAGES.map((tier, index) => ({\n  ...tier,\n  cadenceLabel: \"One-time\",\n  recommended: index === 1,\n}));\n\nconst planShaderTints = [\"#9ca3af\", \"#34d399\", \"#60a5fa\"] as const;\n\nexport function PricingSection() {\n  const handleSelect = (packageId: (typeof WEBSITE_PACKAGES)[number][\"id\"]) => {\n    dispatchPurchaseIntent({ purchaseType: \"website\", packageId });\n    document.getElementById(\"intake\")?.scrollIntoView({ behavior: \"smooth\", block: \"start\" });\n  };\n\n  return (\n    <section id=\"pricing\" className=\"relative w-full px-4 py-20 sm:px-6 lg:px-8\">\n      <div className=\"mx-auto w-full max-w-[1400px] overflow-hidden rounded-[2rem] border border-white/10 bg-neutral-100 text-neutral-950 shadow-[0_30px_80px_rgba(0,0,0,0.22)] dark:border-white/10 dark:bg-neutral-100 dark:text-neutral-950\">\n        <div className=\"relative overflow-hidden bg-neutral-950 px-4 py-14 sm:px-6 sm:py-16 md:py-20 lg:px-8\">\n          <div className=\"absolute inset-0 opacity-90\">\n            <SquircleShift width=\"100%\" height=\"100%\" speed={0.22} colorLayers={3} gridFrequency={22} gridIntensity={0.72} waveSpeed={0.18} waveIntensity={0.08} spiralIntensity={0.76} lineThickness={0.055} falloff={1.15} centerX={0.88} centerY={0.72} brightness={1.1} phaseOffset={6} colorTint=\"#6ee7b7\" lightBackground=\"#09090b\" darkBackground=\"#09090b\" className=\"h-full w-full\" />\n          </div>\n          <div className=\"absolute inset-0 bg-[linear-gradient(180deg,rgba(9,9,11,0.16),rgba(9,9,11,0.76))]\" />\n\n          <div className=\"relative z-10 mx-auto max-w-[1400px]\">\n            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className=\"mx-auto max-w-4xl text-center\">\n              <span className=\"inline-flex items-center rounded-sm border border-white/15 bg-white/10 px-4 py-1 text-sm font-medium text-white backdrop-blur-sm\">\n                Website pricing\n              </span>\n              <h2 className=\"mt-6 text-4xl font-medium leading-tight text-white sm:text-5xl md:text-6xl lg:text-7xl\">\n                Launch faster,\n                <br />\n                rank cleaner\n              </h2>\n              <p className=\"mx-auto mt-6 max-w-3xl text-lg font-medium leading-relaxed text-white/76 sm:text-xl\">\n                Clean one-time pricing for service-business websites with SEO structure, lead routing, and live-ready trust assets built in.\n              </p>\n            </motion.div>\n          </div>\n        </div>\n\n        <div className=\"bg-[linear-gradient(180deg,#ffffff_0%,#f6f7f8_100%)] px-4 py-12 sm:px-6 lg:px-8\">\n          <div className=\"mx-auto max-w-[1400px]\">\n            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.08 }} className=\"mb-12 text-center\">\n              <p className=\"text-xl font-medium text-neutral-950 sm:text-2xl\">\n                Pick the build depth you need now.\n              </p>\n              <p className=\"mt-2 text-base text-neutral-600 sm:text-lg\">\n                Every package is a one-time project fee. Boost retainers stay optional.\n              </p>\n            </motion.div>\n\n            <div className=\"rounded-[2rem] border border-white/70 bg-white/40 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_20px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-6\">\n              <div className=\"grid grid-cols-1 gap-6 lg:grid-cols-3\">\n                {websitePlans.map((tier, index) => (\n                  <motion.div key={tier.id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.16 + index * 0.08 }} className={tier.recommended ? \"lg:-translate-y-1\" : undefined}>\n                    <DepthCard\n                      width=\"100%\"\n                      height={708}\n                      borderRadius=\"1.75rem\"\n                      maxRotation={6}\n                      maxTranslation={8}\n                      disableOnMobile\n                      spotlightColor={tier.recommended ? \"rgba(110, 231, 183, 0.22)\" : \"rgba(255, 255, 255, 0.18)\"}\n                      className={[\n                        \"h-full w-full\",\n                        tier.recommended ? \"shadow-[0_24px_60px_rgba(16,185,129,0.16)]\" : \"shadow-[0_16px_34px_rgba(15,23,42,0.1)]\",\n                      ].join(\" \")}\n                      backgroundContent={\n                        <>\n                          <SquircleShift width=\"100%\" height=\"100%\" speed={0.22} colorLayers={3} gridFrequency={18} gridIntensity={0.92} waveSpeed={0.2} waveIntensity={0.085} spiralIntensity={0.82} lineThickness={0.06} falloff={1.08} centerX={0.88} centerY={0.72} brightness={1.24} phaseOffset={6 + index} colorTint={planShaderTints[index]} lightBackground={tier.recommended ? \"#ecfdf5\" : \"#f8fafc\"} darkBackground={tier.recommended ? \"#ecfdf5\" : \"#f8fafc\"} className=\"h-full w-full\" />\n                          <div className={[\"absolute inset-0\", tier.recommended ? \"bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.3)_22%,rgba(236,253,245,0.72)_62%,rgba(236,253,245,0.9)_100%)]\" : \"bg-[linear-gradient(180deg,rgba(255,255,255,0.14),rgba(255,255,255,0.34)_22%,rgba(248,250,252,0.78)_62%,rgba(248,250,252,0.92)_100%)]\"].join(\" \")} />\n                          <div className=\"absolute inset-x-5 top-5 h-28 rounded-full bg-white/35 blur-2xl\" />\n                        </>\n                      }\n                    >\n                      <div className={[\"relative flex h-full flex-col rounded-[1.75rem] border bg-white/28 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_18px_35px_rgba(15,23,42,0.08)] backdrop-blur-2xl sm:p-7\", tier.recommended ? \"border-emerald-200/80\" : \"border-white/65\"].join(\" \")}>\n                        <div className=\"mb-6 flex items-center justify-between gap-3\">\n                          <span className={[\"rounded-sm px-3 py-1.5 text-xs font-medium uppercase tracking-[0.18em]\", tier.recommended ? \"bg-emerald-400 text-black\" : \"bg-neutral-950 text-white\"].join(\" \")}>\n                            {tier.name}\n                          </span>\n                          <span className=\"rounded-sm border border-white/70 bg-white/55 px-3 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-neutral-700 backdrop-blur-md\">\n                            {tier.cadenceLabel}\n                          </span>\n                        </div>\n\n                        <div className=\"mb-6 flex items-end justify-between gap-4\">\n                          <span className=\"text-5xl font-bold tracking-tight text-neutral-950\">\n                            {tier.priceLabel}\n                          </span>\n                          <span className=\"pb-2 text-sm text-neutral-500\">\n                            one project fee\n                          </span>\n                        </div>\n\n                        <p className=\"mb-8 text-base leading-relaxed text-neutral-700\">\n                          {tier.description}\n                        </p>\n\n                        <div className=\"mb-6 rounded-sm border border-white/70 bg-white/44 px-3 py-2 text-xs font-medium uppercase tracking-[0.12em] text-neutral-700 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]\">\n                          {tier.ownershipSummary}\n                        </div>\n\n                        <div className=\"mb-8 space-y-0\">\n                          {tier.features.map((feature, featureIndex) => (\n                            <div key={feature} className={[\"flex items-start gap-3 py-4\", \"border-t border-white/60\", featureIndex === tier.features.length - 1 ? \"border-b border-white/60\" : \"\"].join(\" \")}>\n                              <Check className=\"mt-0.5 h-4 w-4 shrink-0 text-emerald-600\" />\n                              <p className=\"text-sm leading-relaxed text-neutral-800\">{feature}</p>\n                            </div>\n                          ))}\n                        </div>\n\n                        <div className=\"mt-auto pt-5\">\n                          <button\n                            type=\"button\"\n                            onClick={() => handleSelect(tier.id)}\n                            className={[\n                              \"w-full rounded-xl border px-6 py-3.5 text-sm font-semibold shadow-[0_16px_28px_rgba(15,23,42,0.12)] transition-all duration-200\",\n                              tier.recommended ? \"border-emerald-300/70 bg-emerald-400 text-black hover:-translate-y-0.5 hover:bg-emerald-300\" : \"border-neutral-900/90 bg-neutral-950 text-white hover:-translate-y-0.5 hover:bg-neutral-800\",\n                            ].join(\" \")}\n                          >\n                            {tier.cta}\n                          </button>\n                        </div>\n                      </div>\n                    </DepthCard>\n                  </motion.div>\n                ))}\n              </div>\n            </div>\n          </div>\n        </div>\n      </div>\n    </section>\n  );\n}\n`;fs.writeFileSync(file, content);"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "build-pricing-fix",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"build"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "build-hero-pricing-refactor",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"build"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "build-hero7-gallery-refactor",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"build"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "build-hero7-gallery-refactor-retry",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"build"
+			],
+			"isBackground": false,
+			"group": "build"
+		}
+	]
+}

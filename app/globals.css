@@ -1,0 +1,338 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #111113;
+  --card-foreground: #fafafa;
+  --popover: #111113;
+  --popover-foreground: #fafafa;
+  --primary: #10b981;
+  --primary-foreground: #09090b;
+  --secondary: #1a1a1f;
+  --secondary-foreground: #fafafa;
+  --muted: #1a1a1f;
+  --muted-foreground: #a1a1aa;
+  --accent: #10b981;
+  --accent-foreground: #09090b;
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #10b981;
+  --chart-1: #10b981;
+  --chart-2: #34d399;
+  --chart-3: #6ee7b7;
+  --chart-4: #a7f3d0;
+  --chart-5: #d1fae5;
+  --radius: 0.625rem;
+  --sidebar: #111113;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #10b981;
+  --sidebar-primary-foreground: #09090b;
+  --sidebar-accent: #1a1a1f;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #27272a;
+  --sidebar-ring: #10b981;
+}
+
+@theme inline {
+  --font-sans: 'Inter', 'Inter Fallback', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'JetBrains Mono Fallback', monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .neo-surface {
+    background: linear-gradient(145deg, rgba(25, 28, 36, 0.92), rgba(10, 12, 17, 0.96));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+      22px 22px 44px rgba(0, 0, 0, 0.45),
+      -16px -16px 34px rgba(255, 255, 255, 0.028),
+      inset 1px 1px 0 rgba(255, 255, 255, 0.08),
+      inset -1px -1px 0 rgba(255, 255, 255, 0.02);
+  }
+
+  .neo-surface-soft {
+    background: linear-gradient(145deg, rgba(27, 30, 38, 0.84), rgba(14, 16, 22, 0.92));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+      12px 12px 28px rgba(0, 0, 0, 0.3),
+      -10px -10px 20px rgba(255, 255, 255, 0.02),
+      inset 1px 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .neo-inset {
+    background: linear-gradient(145deg, rgba(12, 13, 18, 0.95), rgba(24, 27, 34, 0.78));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+      inset 10px 10px 20px rgba(0, 0, 0, 0.34),
+      inset -8px -8px 18px rgba(255, 255, 255, 0.025),
+      0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .neo-button-shell {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    overflow: hidden;
+    border-radius: 1.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    transition:
+      transform 180ms ease,
+      box-shadow 220ms ease,
+      border-color 220ms ease,
+      background 220ms ease,
+      color 220ms ease;
+    box-shadow:
+      16px 16px 30px rgba(0, 0, 0, 0.38),
+      -10px -10px 24px rgba(255, 255, 255, 0.024),
+      inset 1px 1px 0 rgba(255, 255, 255, 0.1),
+      inset -1px -1px 0 rgba(255, 255, 255, 0.02);
+  }
+
+  .neo-button-shell:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow:
+      20px 20px 38px rgba(0, 0, 0, 0.45),
+      -12px -12px 28px rgba(255, 255, 255, 0.028),
+      inset 1px 1px 0 rgba(255, 255, 255, 0.14),
+      inset -1px -1px 0 rgba(255, 255, 255, 0.03);
+  }
+
+  .neo-button-shell:active {
+    transform: translateY(0);
+    box-shadow:
+      inset 10px 10px 18px rgba(0, 0, 0, 0.32),
+      inset -8px -8px 16px rgba(255, 255, 255, 0.024);
+  }
+
+  .neo-button-primary {
+    background: linear-gradient(145deg, rgba(40, 225, 163, 0.96), rgba(15, 185, 129, 0.92) 52%, rgba(7, 105, 79, 0.95));
+    color: var(--primary-foreground);
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow:
+      0 18px 38px rgba(16, 185, 129, 0.24),
+      16px 16px 30px rgba(0, 0, 0, 0.28),
+      inset 1px 1px 0 rgba(255, 255, 255, 0.22),
+      inset -1px -1px 0 rgba(5, 80, 61, 0.22);
+  }
+
+  .neo-button-primary:hover {
+    background: linear-gradient(145deg, rgba(66, 233, 179, 0.98), rgba(16, 185, 129, 0.96) 52%, rgba(6, 96, 72, 0.98));
+  }
+
+  .neo-button-secondary {
+    background: linear-gradient(145deg, rgba(30, 34, 42, 0.95), rgba(13, 15, 20, 0.98));
+    color: var(--foreground);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .neo-button-secondary:hover {
+    background: linear-gradient(145deg, rgba(35, 39, 48, 0.98), rgba(16, 18, 24, 1));
+  }
+
+  .neo-button-well {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.4rem;
+    padding: 0.45rem;
+    background: linear-gradient(145deg, rgba(8, 10, 14, 0.98), rgba(24, 27, 35, 0.94));
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow:
+      inset 16px 16px 24px rgba(0, 0, 0, 0.42),
+      inset -12px -12px 22px rgba(255, 255, 255, 0.024),
+      0 8px 18px rgba(0, 0, 0, 0.24);
+  }
+
+  .neo-button-well::after {
+    content: "";
+    position: absolute;
+    inset: 0.35rem;
+    border-radius: 1.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.045);
+    pointer-events: none;
+  }
+
+  .neo-package-button {
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: white;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      border-color 180ms ease,
+      filter 180ms ease;
+    box-shadow:
+      8px 8px 18px rgba(0, 0, 0, 0.34),
+      -8px -8px 16px rgba(255, 255, 255, 0.03),
+      inset 1px 1px 0 rgba(255, 255, 255, 0.14),
+      inset -1px -1px 0 rgba(0, 0, 0, 0.16);
+  }
+
+  .neo-button-well:hover .neo-package-button {
+    transform: translateY(1px);
+    filter: saturate(1.08);
+  }
+
+  .neo-package-button:active {
+    transform: translateY(3px);
+    box-shadow:
+      inset 10px 10px 20px rgba(0, 0, 0, 0.34),
+      inset -8px -8px 18px rgba(255, 255, 255, 0.03),
+      0 2px 10px rgba(0, 0, 0, 0.18);
+  }
+
+  .plan-button-frame {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.9rem;
+    padding: 0.5rem;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015)) padding-box,
+      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.4)) border-box;
+    border: 1px solid transparent;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      inset 0 -10px 18px rgba(0, 0, 0, 0.32),
+      0 18px 34px rgba(0, 0, 0, 0.34);
+  }
+
+  .plan-button-frame::before {
+    content: "";
+    position: absolute;
+    inset: 0.35rem;
+    border-radius: 1.45rem;
+    background:
+      linear-gradient(180deg, rgba(7, 8, 11, 0.96), rgba(15, 17, 22, 0.94)) padding-box,
+      linear-gradient(135deg, rgba(80, 54, 10, 0.9) 0%, rgba(244, 199, 103, 0.98) 16%, rgba(126, 85, 17, 0.95) 38%, rgba(255, 218, 132, 0.98) 54%, rgba(118, 79, 13, 0.96) 76%, rgba(38, 25, 3, 0.95) 100%) border-box;
+    border: 2px solid transparent;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 246, 214, 0.22),
+      inset 0 -10px 18px rgba(0, 0, 0, 0.42),
+      0 0 0 1px rgba(255, 210, 116, 0.08);
+    pointer-events: none;
+  }
+
+  .plan-button-core {
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 1.5rem;
+    border: 0;
+    background:
+      radial-gradient(circle at 50% 22%, rgba(255, 240, 198, 0.12), transparent 34%),
+      linear-gradient(180deg, rgba(20, 22, 28, 0.98), rgba(10, 11, 15, 1));
+    color: white;
+    letter-spacing: 0.02em;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.07),
+      inset 0 -16px 24px rgba(0, 0, 0, 0.48),
+      0 8px 16px rgba(0, 0, 0, 0.22);
+    transition:
+      filter 180ms ease,
+      box-shadow 180ms ease,
+      background 180ms ease;
+  }
+
+  .plan-button-core::before {
+    content: "";
+    position: absolute;
+    inset: 0.55rem;
+    border-radius: 1.15rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    pointer-events: none;
+  }
+
+  .plan-button-core::after {
+    content: "";
+    position: absolute;
+    top: 0.32rem;
+    left: 18%;
+    right: 18%;
+    height: 1px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, rgba(255, 247, 227, 0.9), transparent);
+    opacity: 0.9;
+    pointer-events: none;
+  }
+
+  .plan-button-core:hover {
+    filter: brightness(1.04) saturate(1.03);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -16px 24px rgba(0, 0, 0, 0.5),
+      0 10px 18px rgba(0, 0, 0, 0.24);
+  }
+
+  .plan-button-core:active {
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.04),
+      inset 0 -10px 18px rgba(0, 0, 0, 0.5),
+      0 4px 10px rgba(0, 0, 0, 0.18);
+  }
+}
