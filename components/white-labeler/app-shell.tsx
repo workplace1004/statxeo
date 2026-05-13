@@ -27,6 +27,7 @@ const segmentTitle: Record<PortalSegment, string> = {
   billing: "Billing",
   payouts: "Payouts",
   branding: "Branding",
+  social: "Social",
   team: "Team",
   account: "Account",
 }

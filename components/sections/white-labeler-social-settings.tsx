@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { 
   Facebook, 
   Instagram, 
@@ -13,6 +14,7 @@ import {
   AlertCircle,
   Loader2
 } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,7 +29,11 @@ const SOCIAL_PROVIDERS = [
 ]
 
 export function WhiteLabelerSocialSettings() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [connecting, setConnecting] = useState<string | null>(null)
+  const status = searchParams.get("status")
+  const message = searchParams.get("message")
 
   const handleConnect = async (provider: string) => {
     setConnecting(provider)
@@ -39,12 +45,13 @@ export function WhiteLabelerSocialSettings() {
       })
 
       if (!response.ok) {
-        throw new Error("Failed to get connection URL")
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null
+        throw new Error(payload?.error || "Failed to get connection URL")
       }
 
       const data = await response.json()
       if (data.authUrl) {
-        window.location.href = data.authUrl
+        router.push(data.authUrl)
       } else {
         throw new Error("No URL returned from server")
       }
@@ -58,10 +65,26 @@ export function WhiteLabelerSocialSettings() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      {status === "success" ? (
+        <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900" aria-live="polite">
+          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+          <AlertTitle>Social account connected</AlertTitle>
+          <AlertDescription>{message || "Your social account was connected successfully."}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {status === "error" ? (
+        <Alert variant="destructive" aria-live="polite">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Connection failed</AlertTitle>
+          <AlertDescription>{message || "We could not connect that social account."}</AlertDescription>
+        </Alert>
+      ) : null}
+
       <div className="flex flex-col gap-2">
         <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Social Connections</h2>
         <p className="text-slate-500 dark:text-slate-400">
-          Connect your agency's social accounts to start publishing content.
+          Connect your agency&apos;s social accounts to start publishing content.
         </p>
       </div>
 
@@ -73,7 +96,7 @@ export function WhiteLabelerSocialSettings() {
                 <provider.icon className="h-5 w-5" />
               </div>
               <Badge variant="outline" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                Ready
+                Available
               </Badge>
             </CardHeader>
             <CardContent>

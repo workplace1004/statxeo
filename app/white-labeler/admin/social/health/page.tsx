@@ -1,27 +1,21 @@
 import { redirect } from "next/navigation"
-import { createServerSupabaseClient } from "@/lib/supabase/server"
-import { normalizeRole } from "@/lib/statxeo/white-labeler-server"
+
 import { SocialHealthCheckSection } from "@/components/sections/social-health-check"
+import { getAuthenticatedWhiteLabeler, isWhiteLabelerAdminRole } from "@/lib/statxeo/white-labeler-server"
 
 export const dynamic = "force-dynamic"
 
 export default async function SocialHealthPage() {
-  const supabase = await createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const authContext = await getAuthenticatedWhiteLabeler()
+  if (authContext instanceof Response) {
+    if (authContext.status === 401) {
+      redirect("/white-labeler/login?next=/white-labeler/admin/social/health")
+    }
 
-  if (!user) {
-    redirect("/white-labeler/login?next=/white-labeler/admin/social/health")
+    redirect("/white-labeler")
   }
 
-  // Check if user is admin/owner
-  const { data: membership } = await supabase
-    .from("statxeo_white_labeler_members")
-    .select("role")
-    .eq("user_id", user.id)
-    .single()
-
-  const role = normalizeRole(membership?.role)
-  if (role !== "owner" && role !== "admin") {
+  if (!isWhiteLabelerAdminRole(authContext.role)) {
     redirect("/white-labeler")
   }
 

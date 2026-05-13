@@ -8,6 +8,7 @@ import {
   Home,
   LayoutGrid,
   Palette,
+  Share2,
   Settings2,
   Users,
   Wallet,
@@ -39,6 +40,7 @@ const nav: Array<{
   { segment: "billing", href: `${base}/billing`, label: "Billing", icon: CreditCard, group: "revenue" },
   { segment: "payouts", href: `${base}/payouts`, label: "Payouts", icon: Wallet, group: "revenue" },
   { segment: "branding", href: `${base}/branding`, label: "Branding", icon: Palette, group: "workspace" },
+  { segment: "social", href: `${base}/social`, label: "Social", icon: Share2, group: "workspace" },
   { segment: "team", href: `${base}/team`, label: "Team", icon: Users, group: "workspace" },
   { segment: "account", href: `${base}/account`, label: "Account", icon: Settings2, group: "settings" },
 ]

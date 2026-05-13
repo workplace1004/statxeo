@@ -65,6 +65,7 @@ export type PortalSegment =
   | "billing"
   | "payouts"
   | "branding"
+  | "social"
   | "team"
   | "account"
 
@@ -75,6 +76,7 @@ export function pathnameToSegment(pathname: string): PortalSegment {
   if (pathname.endsWith("/billing")) return "billing"
   if (pathname.endsWith("/payouts")) return "payouts"
   if (pathname.endsWith("/branding")) return "branding"
+  if (pathname.endsWith("/social")) return "social"
   if (pathname.endsWith("/team")) return "team"
   return "home"
 }

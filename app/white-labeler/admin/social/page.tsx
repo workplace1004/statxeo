@@ -1,30 +1,23 @@
 import { redirect } from "next/navigation"
-import { createServerSupabaseClient } from "@/lib/supabase/server"
-import { normalizeRole } from "@/lib/statxeo/white-labeler-server"
+
 import { WhiteLabelerSocialSettings } from "@/components/sections/white-labeler-social-settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { getAuthenticatedWhiteLabeler, isWhiteLabelerAdminRole } from "@/lib/statxeo/white-labeler-server"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminSocialDashboard() {
-  const supabase = await createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const authContext = await getAuthenticatedWhiteLabeler()
+  if (authContext instanceof Response) {
+    if (authContext.status === 401) {
+      redirect("/white-labeler/login?next=/white-labeler/admin/social")
+    }
 
-  if (!user) {
-    redirect("/white-labeler/login?next=/white-labeler/admin/social")
+    redirect("/white-labeler")
   }
 
-  // Check if user is admin/owner
-  const { data: membership } = await supabase
-    .from("statxeo_white_labeler_members")
-    .select("role")
-    .eq("user_id", user.id)
-    .eq("is_active", true)
-    .single()
-
-  const role = normalizeRole(membership?.role)
-  if (role !== "owner" && role !== "admin") {
+  if (!isWhiteLabelerAdminRole(authContext.role)) {
     redirect("/white-labeler")
   }
 

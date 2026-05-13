@@ -10,23 +10,36 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 type HealthData = {
   status: "healthy" | "unhealthy" | "error" | "loading"
   message: string
-  accountCount?: number
+  connectedAccountCount?: number
   checkedAt?: string
   statusCode?: number
-  error?: any
 }
 
 export function SocialHealthCheckSection() {
   const [data, setData] = useState<HealthData>({ status: "loading", message: "Initializing health check..." })
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  const checkHealth = async () => {
+  const checkHealth = async (signal?: AbortSignal) => {
     setIsRefreshing(true)
     try {
-      const response = await fetch("/api/white-labeler/admin/social/health")
-      const result = await response.json()
-      setData(result)
+      const response = await fetch("/api/white-labeler/admin/social/health", { signal, cache: "no-store" })
+      const result = (await response.json().catch(() => null)) as HealthData | null
+
+      if (!response.ok && !result) {
+        throw new Error("Failed to connect to health check endpoint.")
+      }
+
+      setData(
+        result ?? {
+          status: "error",
+          message: "Failed to connect to health check endpoint.",
+        },
+      )
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return
+      }
+
       setData({
         status: "error",
         message: "Failed to connect to health check endpoint."
@@ -37,7 +50,15 @@ export function SocialHealthCheckSection() {
   }
 
   useEffect(() => {
-    checkHealth()
+    const controller = new AbortController()
+    const timeoutId = window.setTimeout(() => {
+      void checkHealth(controller.signal)
+    }, 0)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+      controller.abort()
+    }
   }, [])
 
   return (
@@ -49,9 +70,9 @@ export function SocialHealthCheckSection() {
             Monitor the connectivity and status of the Outstand.so API integration.
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={checkHealth} 
+        <Button
+          variant="outline"
+          onClick={() => void checkHealth()}
           disabled={isRefreshing}
           className="gap-2"
         >
@@ -98,9 +119,9 @@ export function SocialHealthCheckSection() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.accountCount ?? 0}</div>
+            <div className="text-2xl font-bold">{data.connectedAccountCount ?? 0}</div>
             <p className="text-xs text-muted-foreground">
-              Total social accounts connected to master API key
+              Active social accounts saved for this agency
             </p>
           </CardContent>
         </Card>
@@ -114,11 +135,6 @@ export function SocialHealthCheckSection() {
           <AlertDescription className="mt-2">
             <p className="font-semibold">{data.message}</p>
             {data.statusCode && <p className="text-sm">Status Code: {data.statusCode}</p>}
-            {data.error && (
-              <pre className="mt-2 p-4 bg-black/10 rounded text-xs overflow-auto max-h-40">
-                {JSON.stringify(data.error, null, 2)}
-              </pre>
-            )}
           </AlertDescription>
         </Alert>
       ) : data.status === "healthy" ? (
@@ -131,16 +147,14 @@ export function SocialHealthCheckSection() {
         </Alert>
       ) : null}
 
-      {/* Next Steps for Admin */}
       <Card className="border-dashed">
         <CardHeader>
-          <CardTitle className="text-lg">Administrator Toolbox</CardTitle>
-          <CardDescription>Actions to manage the social media engine.</CardDescription>
+          <CardTitle className="text-lg">Operational Notes</CardTitle>
+          <CardDescription>Use this page to verify provider connectivity before troubleshooting local account state.</CardDescription>
         </CardHeader>
-        <CardContent className="flex gap-4">
-          <Button variant="outline" size="sm">View Outstand Dashboard</Button>
-          <Button variant="outline" size="sm">Rotate API Key</Button>
-          <Button variant="outline" size="sm">Download Logs</Button>
+        <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <p>Connected account counts are scoped to the current white-label agency.</p>
+          <p>Provider health only verifies API reachability and credential validity; it does not guarantee publish permissions for every connected profile.</p>
         </CardContent>
       </Card>
     </div>
