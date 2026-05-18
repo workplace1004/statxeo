@@ -37,7 +37,7 @@ const portalContent: Record<
     helperText: "Need access? Contact your Statxt admin to be invited as an affiliate.",
     helperHref: "/affiliate/help",
     helperCta: "View affiliate help",
-    forgotPasswordHref: undefined,
+    forgotPasswordHref: "/affiliate/forgot-password",
     leftTints: [
       "linear-gradient(135deg, rgba(56,189,248,0.42), rgba(59,130,246,0.24))",
       "linear-gradient(135deg, rgba(34,197,94,0.38), rgba(6,182,212,0.25))",
@@ -70,7 +70,7 @@ const portalContent: Record<
     helperText: "Need access? Contact your Statxeo account owner for an invite.",
     helperHref: "/help",
     helperCta: "Get support",
-    forgotPasswordHref: undefined,
+    forgotPasswordHref: "/customer/forgot-password",
     leftTints: [
       "linear-gradient(135deg, rgba(14,165,233,0.36), rgba(99,102,241,0.24))",
       "linear-gradient(135deg, rgba(34,197,94,0.32), rgba(56,189,248,0.22))",

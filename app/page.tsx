@@ -1,11 +1,8 @@
 import { Navbar } from "@/components/sections/navbar";
 import { HeroSection } from "@/components/sections/hero";
-import { SitePreviewSection } from "@/components/sections/site-preview";
 import { FeaturesSection } from "@/components/sections/features";
 import { HowItWorksSection } from "@/components/sections/how-it-works";
-import { CheckoutFunnelSection } from "@/components/sections/checkout-funnel";
 import { LeadRoutingCtaSection } from "@/components/sections/lead-routing-cta";
-import { SeoReadinessSection } from "@/components/sections/seo-readiness";
 import Footer1 from "@/components/blocks/footer-1";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://statxeo.com";
@@ -58,7 +55,6 @@ export default function Home() {
       <Navbar />
       <main className="min-h-screen bg-background">
         <HeroSection />
-        <SitePreviewSection />
         <FeaturesSection />
 
         <section className="py-6 sm:py-8">
@@ -75,17 +71,7 @@ export default function Home() {
           </div>
         </section>
 
-        <CheckoutFunnelSection />
-
         <LeadRoutingCtaSection />
-
-        <section className="py-6 sm:py-8">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
-          </div>
-        </section>
-
-        <SeoReadinessSection />
 
         <section className="py-6 sm:py-8">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">

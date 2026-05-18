@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
@@ -17,6 +16,7 @@ import {
   TrendingUp,
   Wallet,
 } from "lucide-react"
+import { Chip, SearchField, Tabs } from "@heroui/react"
 
 import {
   AffiliateApiError,
@@ -33,6 +33,17 @@ import {
   fetchAffiliateOverview,
   fetchAffiliatePayouts,
 } from "@/lib/statxeo/affiliate-client"
+import {
+  PortalActionButton,
+  PortalEmptyState,
+  PortalErrorState,
+  PortalHero,
+  PortalShell,
+  PortalStatCard,
+} from "@/components/portal/portal-primitives"
+import { PortalDataTable } from "@/components/portal/portal-data-table"
+import { PortalModal } from "@/components/portal/portal-modal"
+import StaggeredText from "@/components/react-bits/staggered-text"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -46,10 +57,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty"
-import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { createBrowserSupabaseClient } from "@/lib/supabase/client"
@@ -164,6 +171,9 @@ function buildLedgerSummary(rows: AffiliateLedgerEntry[]) {
 export function AffiliatePortalSection() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
+  const [linkSearch, setLinkSearch] = useState("")
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
 
   const [overview, setOverview] = useState<AffiliateOverviewResponse | null>(null)
   const [isOverviewLoading, setIsOverviewLoading] = useState(true)
@@ -394,6 +404,7 @@ export function AffiliatePortalSection() {
         setCreateMaxUses(createKind === "one_time" ? "1" : "")
         setCreateExpiresAt("")
         setLinkActionMessage("Affiliate link created.")
+        setIsCreateModalOpen(false)
       } catch (error) {
         setCreateLinkError(getApiErrorMessage(error, "Unable to create affiliate link."))
       } finally {
@@ -435,6 +446,7 @@ export function AffiliatePortalSection() {
       anchor.remove()
       URL.revokeObjectURL(url)
       setAdminExportSuccess("Payout CSV export started.")
+      setIsExportModalOpen(false)
     } catch (error) {
       setAdminExportError(getApiErrorMessage(error, "Unable to export payout CSV."))
     } finally {
@@ -464,66 +476,80 @@ export function AffiliatePortalSection() {
   }, [router])
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background to-muted/30 px-4 py-12 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl space-y-8">
-        {sessionActionError ? (
-          <Card className="border-destructive/40 bg-card/70 backdrop-blur">
-            <CardHeader>
-              <CardTitle className="text-destructive">Session action failed</CardTitle>
-              <CardDescription>{sessionActionError}</CardDescription>
-            </CardHeader>
-          </Card>
-        ) : null}
+    <PortalShell>
+      {sessionActionError ? <PortalErrorState title="Session action failed" message={sessionActionError} /> : null}
 
-        <div className="space-y-4">
-          <p className="text-xs font-mono uppercase tracking-[0.2em] text-primary">Affiliate Portal</p>
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                {overview?.affiliate.displayName ? `Welcome back, ${overview.affiliate.displayName}` : "Grow with Statxeo"}
-              </h1>
-              <p className="mt-2 max-w-3xl text-sm text-muted-foreground sm:text-base">
-                Manage referral links, track conversions, and monitor commissions from one production dashboard.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/affiliate/help">Help center</Link>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  void Promise.all([loadOverview(), loadLinks(), loadLedger(), loadPayouts(), loadAdminAccess()])
-                }}
-              >
-                <RefreshCcw data-icon="inline-start" />
-                Refresh all
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => void handleSignOut()} disabled={isSigningOut}>
-                <LogOut data-icon="inline-start" />
-                {isSigningOut ? "Signing out..." : "Sign out"}
-              </Button>
-            </div>
-          </div>
-          <Separator />
+      <PortalHero
+        eyebrow="Affiliate Portal"
+        initials="AF"
+        title={
+          <StaggeredText
+            as="span"
+            text={overview?.affiliate.displayName ? `Welcome back, ${overview.affiliate.displayName}` : "Grow with Statxeo"}
+            className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl dark:text-white"
+            segmentBy="words"
+            delay={36}
+            duration={0.42}
+            staggerDirection="forward"
+            direction="bottom"
+          />
+        }
+        description="Manage referral links, conversion flow, and payouts from the same revenue workspace. React Bits is used only as a headline accent here; commission and export behavior are unchanged."
+        status={
+          overview ? (
+            <Chip size="sm" variant="soft" color={overview.affiliate.status === "active" ? "success" : overview.affiliate.status === "pending" ? "warning" : "danger"}>
+              {overview.affiliate.status}
+            </Chip>
+          ) : null
+        }
+        actions={(
+          <>
+            <PortalActionButton variant="outline" onPress={() => router.push("/affiliate/help")}>
+              Help center
+            </PortalActionButton>
+            <PortalActionButton
+              variant="outline"
+              onPress={() => {
+                void Promise.all([loadOverview(), loadLinks(), loadLedger(), loadPayouts(), loadAdminAccess()])
+              }}
+            >
+              <RefreshCcw className="size-4" />
+              Refresh all
+            </PortalActionButton>
+            <PortalActionButton variant="danger-soft" onPress={() => void handleSignOut()} isDisabled={isSigningOut}>
+              <LogOut className="size-4" />
+              {isSigningOut ? "Signing out..." : "Sign out"}
+            </PortalActionButton>
+          </>
+        )}
+      />
+
+      {overview ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <PortalStatCard label="Active links" value={String(overview.stats.links.active)} meta={`${overview.stats.links.total} total links`} />
+          <PortalStatCard label="Paid conversions" value={String(overview.stats.conversions.totalPaid)} meta="Attributed and completed" />
+          <PortalStatCard label="Pending commission" value={formatCents(overview.stats.commissions.pendingCents, "usd")} meta="Awaiting payout batch" />
+          <PortalStatCard label="Paid commission" value={formatCents(overview.stats.commissions.paidCents, "usd")} meta="Settled earnings" />
         </div>
+      ) : null}
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList
+      <div className="space-y-4">
+        <Tabs.Root selectedKey={activeTab} onSelectionChange={(key) => setActiveTab(String(key))}>
+          <Tabs.List
             className={cn(
-              "grid h-auto w-full grid-cols-2 gap-2 p-2",
+              "grid h-auto w-full grid-cols-2 gap-2 rounded-2xl bg-slate-100/90 p-2 dark:bg-white/5",
               canAccessAdminExport ? "md:grid-cols-5" : "md:grid-cols-4",
             )}
           >
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="links">Links</TabsTrigger>
-            <TabsTrigger value="ledger">Ledger</TabsTrigger>
-            <TabsTrigger value="payouts">Payouts</TabsTrigger>
-            {canAccessAdminExport ? <TabsTrigger value="admin">Admin Export</TabsTrigger> : null}
-          </TabsList>
+            <Tabs.Tab id="overview">Overview</Tabs.Tab>
+            <Tabs.Tab id="links">Links</Tabs.Tab>
+            <Tabs.Tab id="ledger">Ledger</Tabs.Tab>
+            <Tabs.Tab id="payouts">Payouts</Tabs.Tab>
+            {canAccessAdminExport ? <Tabs.Tab id="admin">Admin Export</Tabs.Tab> : null}
+          </Tabs.List>
 
-          <TabsContent value="overview" className="space-y-6">
+          <div className="mt-6">
+          <Tabs.Panel id="overview" className="space-y-6">
             {isOverviewLoading ? (
               <div className="space-y-6">
                 <Card className="border-border/60">
@@ -675,69 +701,27 @@ export function AffiliatePortalSection() {
                 </div>
               </>
             ) : null}
-          </TabsContent>
+          </Tabs.Panel>
 
-          <TabsContent value="links" className="space-y-6">
+          <Tabs.Panel id="links" className="space-y-6">
             <div className="grid gap-4 lg:grid-cols-3">
               <Card className="border-border/80 bg-card/70 backdrop-blur lg:col-span-2">
                 <CardHeader>
                   <CardTitle>Create affiliate link</CardTitle>
-                  <CardDescription>Create evergreen or one-time links for campaigns.</CardDescription>
+                  <CardDescription>Create evergreen or one-time links for campaigns using the shared command flow.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form className="space-y-4" onSubmit={handleCreateLink}>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="link-kind">Kind</Label>
-                        <Select value={createKind} onValueChange={(value: "evergreen" | "one_time") => setCreateKind(value)}>
-                          <SelectTrigger id="link-kind" className="w-full">
-                            <SelectValue placeholder="Select kind" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="evergreen">Evergreen</SelectItem>
-                            <SelectItem value="one_time">One-time</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="link-path">Destination path</Label>
-                        <Input
-                          id="link-path"
-                          value={createPath}
-                          onChange={(event) => setCreatePath(event.target.value)}
-                          placeholder="/"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="link-max-uses">Max uses (optional)</Label>
-                        <Input
-                          id="link-max-uses"
-                          type="number"
-                          min={1}
-                          value={createMaxUses}
-                          onChange={(event) => setCreateMaxUses(event.target.value)}
-                          placeholder={createKind === "one_time" ? "1" : "Unlimited"}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="link-expires">Expires at (optional)</Label>
-                        <Input
-                          id="link-expires"
-                          type="datetime-local"
-                          value={createExpiresAt}
-                          onChange={(event) => setCreateExpiresAt(event.target.value)}
-                        />
-                      </div>
-                    </div>
-
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Open the shared command modal to create evergreen or one-time links without leaving the revenue workspace.
+                    </p>
                     {createLinkError ? <p className="text-sm text-destructive">{createLinkError}</p> : null}
                     {linkActionMessage ? <p className="text-sm text-muted-foreground">{linkActionMessage}</p> : null}
-
-                    <Button type="submit" disabled={isCreatingLink}>
-                      {isCreatingLink ? <Spinner className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
-                      Create link
-                    </Button>
-                  </form>
+                    <PortalActionButton variant="primary" onPress={() => setIsCreateModalOpen(true)}>
+                      <Link2 className="size-4" />
+                      New affiliate link
+                    </PortalActionButton>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -763,98 +747,93 @@ export function AffiliatePortalSection() {
               </Card>
             </div>
 
-            <Card className="border-border/80 bg-card/70 backdrop-blur">
-              <CardHeader>
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <CardTitle>Affiliate links</CardTitle>
-                    <CardDescription>Share URLs include your affiliate code and reference slug.</CardDescription>
-                  </div>
-                  <Button variant="outline" onClick={() => void loadLinks()}>
-                    <RefreshCcw className="h-4 w-4" />
-                    Refresh
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {isLinksLoading ? (
-                  <div className="space-y-3">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="flex items-center gap-4">
-                        <Skeleton className="h-4 w-24" />
-                        <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="ml-auto h-8 w-16 rounded-md" />
-                      </div>
-                    ))}
-                  </div>
-                ) : linksError ? (
-                  <p className="text-sm text-destructive">{linksError}</p>
-                ) : links.length === 0 ? (
-                  <Empty>
-                    <EmptyHeader>
-                      <EmptyMedia variant="icon"><Link2 /></EmptyMedia>
-                      <EmptyTitle>No affiliate links yet</EmptyTitle>
-                      <EmptyDescription>Create your first affiliate link above to start tracking referrals.</EmptyDescription>
-                    </EmptyHeader>
-                  </Empty>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Slug</TableHead>
-                        <TableHead>Kind</TableHead>
-                        <TableHead>Destination</TableHead>
-                        <TableHead>Usage</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Created</TableHead>
-                        <TableHead className="text-right">Share URL</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {links.map((link) => {
-                        const active = isLinkActive(link)
-                        return (
-                          <TableRow key={link.id}>
-                            <TableCell className="font-mono text-xs">{link.slug}</TableCell>
-                            <TableCell>{link.kind === "one_time" ? "One-time" : "Evergreen"}</TableCell>
-                            <TableCell className="max-w-[220px] truncate">{link.destination_path || "/"}</TableCell>
-                            <TableCell>
-                              {typeof link.max_uses === "number" ? `${link.uses_count} / ${link.max_uses}` : `${link.uses_count} / ∞`}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={active ? "default" : "secondary"}>{active ? "active" : "inactive"}</Badge>
-                            </TableCell>
-                            <TableCell>{formatDate(link.created_at)}</TableCell>
-                            <TableCell className="text-right">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => void handleCopyShareUrl(link.shareUrl)}
-                                  >
-                                    <Copy data-icon="inline-start" />
-                                    Copy
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p className="max-w-xs truncate font-mono text-xs">{link.shareUrl}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+            <PortalDataTable
+              title="Affiliate links"
+              description="Share URLs include your affiliate code and reference slug."
+              rows={links}
+              getRowId={(row) => row.id}
+              columns={[
+                {
+                  key: "slug",
+                  label: "Slug",
+                  sortable: true,
+                  sortValue: (row) => row.slug,
+                  render: (row) => <span className="font-mono text-xs">{row.slug}</span>,
+                },
+                {
+                  key: "kind",
+                  label: "Kind",
+                  sortable: true,
+                  sortValue: (row) => row.kind,
+                  render: (row) => (row.kind === "one_time" ? "One-time" : "Evergreen"),
+                },
+                {
+                  key: "destination",
+                  label: "Destination",
+                  sortable: true,
+                  sortValue: (row) => row.destination_path,
+                  render: (row) => <span className="max-w-[220px] truncate">{row.destination_path || "/"}</span>,
+                },
+                {
+                  key: "usage",
+                  label: "Usage",
+                  sortable: true,
+                  sortValue: (row) => row.uses_count,
+                  render: (row) => (typeof row.max_uses === "number" ? `${row.uses_count} / ${row.max_uses}` : `${row.uses_count} / ∞`),
+                },
+                {
+                  key: "status",
+                  label: "Status",
+                  sortable: true,
+                  sortValue: (row) => (isLinkActive(row) ? "active" : "inactive"),
+                  render: (row) => {
+                    const active = isLinkActive(row)
+                    return <Badge variant={active ? "default" : "secondary"}>{active ? "active" : "inactive"}</Badge>
+                  },
+                },
+                {
+                  key: "created",
+                  label: "Created",
+                  sortable: true,
+                  sortValue: (row) => row.created_at,
+                  render: (row) => formatDate(row.created_at),
+                },
+                {
+                  key: "share",
+                  label: "Share URL",
+                  render: (row) => (
+                    <div className="flex justify-end">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button type="button" variant="outline" size="sm" onClick={() => void handleCopyShareUrl(row.shareUrl)}>
+                            <Copy data-icon="inline-start" />
+                            Copy
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs truncate font-mono text-xs">{row.shareUrl}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  ),
+                },
+              ]}
+              loading={isLinksLoading}
+              loadingLabel="Loading affiliate links..."
+              error={linksError}
+              searchPlaceholder="Search links by slug or destination"
+              searchValue={linkSearch}
+              onSearchValueChange={setLinkSearch}
+              searchMatcher={(row, query) => [row.slug, row.kind, row.destination_path, row.shareUrl].filter(Boolean).some((value) => String(value).toLowerCase().includes(query))}
+              actions={<Button variant="outline" onClick={() => void loadLinks()}><RefreshCcw className="h-4 w-4" />Refresh</Button>}
+              emptyTitle="No affiliate links yet"
+              emptyDescription="Create your first affiliate link above to start tracking referrals."
+              filteredEmptyTitle="No matching affiliate links"
+              filteredEmptyDescription="Try a different link search term."
+            />
+          </Tabs.Panel>
 
-          <TabsContent value="ledger" className="space-y-6">
+          <Tabs.Panel id="ledger" className="space-y-6">
             <Card className="border-border/80 bg-card/70 backdrop-blur">
               <CardHeader>
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -901,170 +880,80 @@ export function AffiliatePortalSection() {
                   </div>
                 </div>
 
-                {isLedgerLoading ? (
-                  <div className="space-y-3">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <div key={i} className="flex items-center gap-4">
-                        <Skeleton className="h-4 w-28" />
-                        <Skeleton className="h-4 w-20" />
-                        <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-4 w-20" />
-                        <Skeleton className="ml-auto h-5 w-14 rounded-full" />
-                      </div>
-                    ))}
-                  </div>
-                ) : ledgerError ? (
-                  <p className="text-sm text-destructive">{ledgerError}</p>
-                ) : ledgerRows.length === 0 ? (
-                  <Empty>
-                    <EmptyHeader>
-                      <EmptyMedia variant="icon"><MousePointerClick /></EmptyMedia>
-                      <EmptyTitle>No ledger entries</EmptyTitle>
-                      <EmptyDescription>Commission records will appear here as conversions happen through your referral links.</EmptyDescription>
-                    </EmptyHeader>
-                  </Empty>
-                ) : (
-                  <>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Occurred</TableHead>
-                          <TableHead>Package</TableHead>
-                          <TableHead>Basis</TableHead>
-                          <TableHead>Rate</TableHead>
-                          <TableHead>Commission</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Paid At</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {ledgerRows.map((row) => (
-                          <TableRow key={row.id}>
-                            <TableCell>{formatDateTime(row.occurred_at)}</TableCell>
-                            <TableCell>{row.package_tier || "—"}</TableCell>
-                            <TableCell>{formatCents(row.commission_basis_cents, row.currency || "usd")}</TableCell>
-                            <TableCell>{formatPercentFromBps(row.commission_bps)}</TableCell>
-                            <TableCell className="font-medium">
-                              {formatCents(row.amount_cents, row.currency || "usd")}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={ledgerStatusVariant(row.status)}>{row.status}</Badge>
-                            </TableCell>
-                            <TableCell>{formatDateTime(row.paid_at)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-
-                    {ledgerHasMore ? (
-                      <div className="flex justify-center pt-2">
-                        <Button variant="outline" onClick={() => void handleLoadMoreLedger()} disabled={isLedgerLoadingMore}>
-                          {isLedgerLoadingMore ? <Spinner className="h-4 w-4" /> : null}
-                          Load more
-                        </Button>
-                      </div>
-                    ) : null}
-                  </>
-                )}
+                <PortalDataTable
+                  title="Commission ledger"
+                  description="Filter by status and paginate through commission records."
+                  rows={ledgerRows}
+                  getRowId={(row) => row.id}
+                  columns={[
+                    { key: "occurred", label: "Occurred", sortable: true, sortValue: (row) => row.occurred_at, render: (row) => formatDateTime(row.occurred_at) },
+                    { key: "package", label: "Package", sortable: true, sortValue: (row) => row.package_tier, render: (row) => row.package_tier || "—" },
+                    { key: "basis", label: "Basis", sortable: true, sortValue: (row) => row.commission_basis_cents, render: (row) => formatCents(row.commission_basis_cents, row.currency || "usd") },
+                    { key: "rate", label: "Rate", sortable: true, sortValue: (row) => row.commission_bps, render: (row) => formatPercentFromBps(row.commission_bps) },
+                    { key: "commission", label: "Commission", sortable: true, sortValue: (row) => row.amount_cents, render: (row) => <span className="font-medium">{formatCents(row.amount_cents, row.currency || "usd")}</span> },
+                    { key: "status", label: "Status", sortable: true, sortValue: (row) => row.status, render: (row) => <Badge variant={ledgerStatusVariant(row.status)}>{row.status}</Badge> },
+                    { key: "paid", label: "Paid At", sortable: true, sortValue: (row) => row.paid_at, render: (row) => formatDateTime(row.paid_at) },
+                  ]}
+                  loading={isLedgerLoading}
+                  loadingLabel="Loading affiliate ledger..."
+                  error={ledgerError}
+                  actions={ledgerHasMore ? (
+                    <Button variant="outline" onClick={() => void handleLoadMoreLedger()} disabled={isLedgerLoadingMore}>
+                      {isLedgerLoadingMore ? <Spinner className="h-4 w-4" /> : null}
+                      Load more
+                    </Button>
+                  ) : undefined}
+                  emptyTitle="No ledger entries"
+                  emptyDescription="Commission records will appear here as conversions happen through your referral links."
+                />
               </CardContent>
             </Card>
-          </TabsContent>
+          </Tabs.Panel>
 
-          <TabsContent value="payouts" className="space-y-6">
-            <Card className="border-border/80 bg-card/70 backdrop-blur">
-              <CardHeader>
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <CardTitle>Payout history</CardTitle>
-                    <CardDescription>Recent payout batches and export status.</CardDescription>
-                  </div>
+          <Tabs.Panel id="payouts" className="space-y-6">
+            <PortalDataTable
+              title="Payout history"
+              description="Recent payout batches and export status."
+              rows={payouts}
+              getRowId={(row) => row.id}
+              columns={[
+                { key: "batch", label: "Batch", sortable: true, sortValue: (row) => row.id, render: (row) => <span className="font-mono text-xs">{row.id}</span> },
+                { key: "period", label: "Period", sortable: true, sortValue: (row) => row.period_start ?? row.created_at, render: (row) => `${formatDate(row.period_start ?? null)} → ${formatDate(row.period_end ?? null)}` },
+                { key: "total", label: "Your Total", sortable: true, sortValue: (row) => typeof row.affiliate_total_cents === "number" ? row.affiliate_total_cents : (row.total_cents ?? 0), render: (row) => formatCents(typeof row.affiliate_total_cents === "number" ? row.affiliate_total_cents : (row.total_cents ?? 0), row.currency || "usd") },
+                { key: "commissions", label: "Commissions", sortable: true, sortValue: (row) => row.affiliate_commission_count ?? 0, render: (row) => row.affiliate_commission_count ?? "—" },
+                { key: "status", label: "Status", sortable: true, sortValue: (row) => row.status, render: (row) => <Badge variant="secondary">{row.status}</Badge> },
+                { key: "exported", label: "Exported", sortable: true, sortValue: (row) => row.exported_at ?? row.created_at, render: (row) => formatDateTime(row.exported_at ?? row.created_at ?? null) },
+              ]}
+              loading={isPayoutsLoading}
+              loadingLabel="Loading payout history..."
+              error={payoutsError}
+              actions={
+                <>
                   <Button variant="outline" onClick={() => void loadPayouts()}>
                     <RefreshCcw className="h-4 w-4" />
                     Refresh
                   </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {isPayoutsLoading ? (
-                  <div className="space-y-3">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                      <div key={i} className="flex items-center gap-4">
-                        <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-4 w-36" />
-                        <Skeleton className="h-4 w-20" />
-                        <Skeleton className="h-4 w-12" />
-                        <Skeleton className="h-5 w-14 rounded-full" />
-                        <Skeleton className="ml-auto h-4 w-24" />
-                      </div>
-                    ))}
-                  </div>
-                ) : payoutsError ? (
-                  <p className="text-sm text-muted-foreground">{payoutsError}</p>
-                ) : payouts.length === 0 ? (
-                  <Empty>
-                    <EmptyHeader>
-                      <EmptyMedia variant="icon"><Wallet /></EmptyMedia>
-                      <EmptyTitle>No payout batches yet</EmptyTitle>
-                      <EmptyDescription>Payout batches will appear here once commissions are approved and batched for payment.</EmptyDescription>
-                    </EmptyHeader>
-                  </Empty>
-                ) : (
-                  <>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Batch</TableHead>
-                          <TableHead>Period</TableHead>
-                          <TableHead>Your Total</TableHead>
-                          <TableHead>Commissions</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Exported</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {payouts.map((row) => (
-                          <TableRow key={row.id}>
-                            <TableCell className="font-mono text-xs">{row.id}</TableCell>
-                            <TableCell>
-                              {formatDate(row.period_start ?? null)} → {formatDate(row.period_end ?? null)}
-                            </TableCell>
-                            <TableCell>
-                              {formatCents(
-                                typeof row.affiliate_total_cents === "number" ? row.affiliate_total_cents : (row.total_cents ?? 0),
-                                row.currency || "usd",
-                              )}
-                            </TableCell>
-                            <TableCell>{row.affiliate_commission_count ?? "—"}</TableCell>
-                            <TableCell>
-                              <Badge variant="secondary">{row.status}</Badge>
-                            </TableCell>
-                            <TableCell>{formatDateTime(row.exported_at ?? row.created_at ?? null)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-
-                    {payoutsHasMore ? (
-                      <div className="flex justify-center pt-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => void handleLoadMorePayouts()}
-                          disabled={isPayoutsLoadingMore}
-                        >
-                          {isPayoutsLoadingMore ? <Spinner className="h-4 w-4" /> : null}
-                          Load more
-                        </Button>
-                      </div>
-                    ) : null}
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  {canAccessAdminExport ? (
+                    <PortalActionButton variant="outline" onPress={() => setIsExportModalOpen(true)}>
+                      <Download className="size-4" />
+                      Export CSV
+                    </PortalActionButton>
+                  ) : null}
+                  {payoutsHasMore ? (
+                    <Button variant="outline" onClick={() => void handleLoadMorePayouts()} disabled={isPayoutsLoadingMore}>
+                      {isPayoutsLoadingMore ? <Spinner className="h-4 w-4" /> : null}
+                      Load more
+                    </Button>
+                  ) : null}
+                </>
+              }
+              emptyTitle="No payout batches yet"
+              emptyDescription="Payout batches will appear here once commissions are approved and batched for payment."
+            />
+          </Tabs.Panel>
 
           {canAccessAdminExport ? (
-          <TabsContent value="admin" className="space-y-6">
+          <Tabs.Panel id="admin" className="space-y-6">
             <Card className="border-border/80 bg-card/70 backdrop-blur">
               <CardHeader>
                 <CardTitle>Admin payout export</CardTitle>
@@ -1073,23 +962,12 @@ export function AffiliatePortalSection() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid gap-3 sm:max-w-sm">
-                  <Label htmlFor="payout-month">Payout month</Label>
-                  <Input
-                    id="payout-month"
-                    type="month"
-                    value={payoutMonth}
-                    onChange={(event) => setPayoutMonth(event.target.value)}
-                  />
-                </div>
-
                 {adminExportError ? <p className="text-sm text-destructive">{adminExportError}</p> : null}
                 {adminExportSuccess ? <p className="text-sm text-muted-foreground">{adminExportSuccess}</p> : null}
-
-                <Button onClick={() => void handleExportPayoutCsv()} disabled={isExporting}>
-                  {isExporting ? <Spinner className="h-4 w-4" /> : <Download className="h-4 w-4" />}
-                  Export CSV
-                </Button>
+                <PortalActionButton variant="primary" onPress={() => setIsExportModalOpen(true)}>
+                  <Download className="size-4" />
+                  Open export command
+                </PortalActionButton>
               </CardContent>
             </Card>
 
@@ -1104,10 +982,86 @@ export function AffiliatePortalSection() {
                 </CardDescription>
               </CardHeader>
             </Card>
-            </TabsContent>
+            </Tabs.Panel>
           ) : null}
-        </Tabs>
+          </div>
+        </Tabs.Root>
       </div>
-    </main>
+
+      <PortalModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        title="Create affiliate link"
+        description="Use the shared command modal to create evergreen or one-time referral links."
+        footer={
+          <>
+            <PortalActionButton variant="outline" onPress={() => setIsCreateModalOpen(false)}>
+              Cancel
+            </PortalActionButton>
+            <Button type="submit" form="affiliate-link-form" disabled={isCreatingLink}>
+              {isCreatingLink ? <Spinner className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
+              Create link
+            </Button>
+          </>
+        }
+      >
+        <form id="affiliate-link-form" className="space-y-4" onSubmit={handleCreateLink}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="link-kind">Kind</Label>
+              <Select value={createKind} onValueChange={(value: "evergreen" | "one_time") => setCreateKind(value)}>
+                <SelectTrigger id="link-kind" className="w-full">
+                  <SelectValue placeholder="Select kind" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="evergreen">Evergreen</SelectItem>
+                  <SelectItem value="one_time">One-time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="link-path">Destination path</Label>
+              <Input id="link-path" value={createPath} onChange={(event) => setCreatePath(event.target.value)} placeholder="/" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="link-max-uses">Max uses (optional)</Label>
+              <Input id="link-max-uses" type="number" min={1} value={createMaxUses} onChange={(event) => setCreateMaxUses(event.target.value)} placeholder={createKind === "one_time" ? "1" : "Unlimited"} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="link-expires">Expires at (optional)</Label>
+              <Input id="link-expires" type="datetime-local" value={createExpiresAt} onChange={(event) => setCreateExpiresAt(event.target.value)} />
+            </div>
+          </div>
+          {createLinkError ? <p className="text-sm text-destructive">{createLinkError}</p> : null}
+        </form>
+      </PortalModal>
+
+      <PortalModal
+        open={isExportModalOpen}
+        onOpenChange={setIsExportModalOpen}
+        title="Export payout CSV"
+        description="Launch a protected monthly export through the shared command modal."
+        footer={
+          <>
+            <PortalActionButton variant="outline" onPress={() => setIsExportModalOpen(false)}>
+              Cancel
+            </PortalActionButton>
+            <Button onClick={() => void handleExportPayoutCsv()} disabled={isExporting}>
+              {isExporting ? <Spinner className="h-4 w-4" /> : <Download className="h-4 w-4" />}
+              Export CSV
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:max-w-sm">
+            <Label htmlFor="payout-month">Payout month</Label>
+            <Input id="payout-month" type="month" value={payoutMonth} onChange={(event) => setPayoutMonth(event.target.value)} />
+          </div>
+          {adminExportError ? <p className="text-sm text-destructive">{adminExportError}</p> : null}
+          {adminExportSuccess ? <p className="text-sm text-muted-foreground">{adminExportSuccess}</p> : null}
+        </div>
+      </PortalModal>
+    </PortalShell>
   )
 }

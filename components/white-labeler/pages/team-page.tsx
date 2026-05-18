@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { Plus, UserPlus } from "lucide-react"
+import { Chip } from "@heroui/react"
 
 import {
   AlertDialog,
@@ -14,13 +15,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { PortalActionButton, PortalEmptyState, PortalHero, PortalLoadingState, PortalStatCard, PortalSurfaceCard } from "@/components/portal/portal-primitives"
+import { PortalDataTable } from "@/components/portal/portal-data-table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Input } from "@/components/ui/input"
 import { useWhiteLabelerPortal } from "@/components/white-labeler/portal-context"
 import { formatDate } from "@/components/white-labeler/portal-utils"
@@ -65,125 +64,174 @@ export function WhiteLabelerTeamPage() {
     if (ok) setInviteOpen(false)
   }
 
+  const activeMembers = useMemo(() => sortedTeam.filter((member) => member.is_active).length, [sortedTeam])
+  const elevatedMembers = useMemo(() => sortedTeam.filter((member) => member.role === "owner" || member.role === "admin").length, [sortedTeam])
+
+  const teamColumns = useMemo(() => [
+    {
+      key: "user",
+      label: "User",
+      rowHeader: true,
+      sortable: true,
+      sortValue: (row: WhiteLabelerTeamMember) => row.user_id,
+      render: (row: WhiteLabelerTeamMember) => {
+        const isSelf = row.user_id === overview?.account.userId
+
+        return (
+          <div className="space-y-1">
+            <p className="font-mono text-xs text-slate-900 dark:text-white">{row.user_id}</p>
+            {isSelf ? <p className="text-xs text-slate-500 dark:text-slate-400">Current workspace user</p> : null}
+          </div>
+        )
+      },
+      className: "max-w-[280px]",
+    },
+    {
+      key: "role",
+      label: "Role",
+      sortable: true,
+      sortValue: (row: WhiteLabelerTeamMember) => row.role,
+      render: (row: WhiteLabelerTeamMember) => {
+        const isSelf = row.user_id === overview?.account.userId
+
+        return canManageTeam && !isSelf ? (
+          <Select
+            value={row.role}
+            onValueChange={(v) => {
+              const next = v as "owner" | "admin" | "member"
+              if (next === row.role) return
+              if (next === "owner") {
+                setRoleConfirm({ row, next })
+              } else {
+                void handleUpdateMemberRole(row, next)
+              }
+            }}
+            disabled={updatingMemberRoleId === row.user_id}
+          >
+            <SelectTrigger className="h-11 w-[140px]" aria-label={`Role for ${row.user_id}`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="member">Member</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+              {overview?.account.role === "owner" ? <SelectItem value="owner">Owner</SelectItem> : null}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Chip size="sm" variant="soft" color={row.role === "owner" ? "accent" : row.role === "admin" ? "warning" : "default"} className="capitalize">
+            {row.role}
+          </Chip>
+        )
+      },
+    },
+    {
+      key: "status",
+      label: "Status",
+      sortable: true,
+      sortValue: (row: WhiteLabelerTeamMember) => (row.is_active ? 1 : 0),
+      render: (row: WhiteLabelerTeamMember) => (
+        <Chip size="sm" variant="soft" color={row.is_active ? "success" : "default"}>
+          {row.is_active ? "Active" : "Inactive"}
+        </Chip>
+      ),
+    },
+    {
+      key: "joined",
+      label: "Joined",
+      sortable: true,
+      sortValue: (row: WhiteLabelerTeamMember) => row.created_at,
+      render: (row: WhiteLabelerTeamMember) => formatDate(row.created_at),
+    },
+    ...(canManageTeam
+      ? [{
+          key: "actions",
+          label: "Actions",
+          className: "text-right",
+          headerClassName: "text-right",
+          render: (row: WhiteLabelerTeamMember) => {
+            const isSelf = row.user_id === overview?.account.userId
+
+            return (
+              <div className="flex justify-end">
+                {isSelf ? (
+                  <span className="text-xs text-slate-500 dark:text-slate-400">You</span>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void handleToggleMemberStatus(row)}
+                    disabled={updatingMemberId === row.user_id}
+                  >
+                    {updatingMemberId === row.user_id ? "Updating…" : row.is_active ? "Deactivate" : "Reactivate"}
+                  </Button>
+                )}
+              </div>
+            )
+          },
+        }]
+      : []),
+  ], [canManageTeam, handleToggleMemberStatus, handleUpdateMemberRole, overview?.account.role, overview?.account.userId, updatingMemberId, updatingMemberRoleId])
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-muted-foreground text-sm font-medium uppercase tracking-wider">Workspace</p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight">Team</h2>
-          <p className="text-muted-foreground mt-1 max-w-2xl text-sm">
-            Invite teammates by Supabase user UUID. Email invites are planned—share UUID from Account settings for now.
-          </p>
-        </div>
-        {canManageTeam ? (
-          <Button type="button" className="gap-2" onClick={() => setInviteOpen(true)}>
+      <PortalHero
+        eyebrow="Workspace Settings"
+        initials="TM"
+        title="Team"
+        description="Invite teammates by Supabase user UUID. Email invites are planned, so share UUIDs from Account settings for now."
+        status={<Chip size="sm" variant="soft" color={canManageTeam ? "accent" : "default"}>{canManageTeam ? "Team management enabled" : "Read-only team access"}</Chip>}
+        actions={canManageTeam ? (
+          <PortalActionButton onPress={() => setInviteOpen(true)}>
             <Plus className="size-4" />
             Invite member
-          </Button>
+          </PortalActionButton>
         ) : null}
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <PortalStatCard label="Total members" value={String(sortedTeam.length)} meta="All workspace collaborators" />
+        <PortalStatCard label="Active members" value={String(activeMembers)} meta="Currently enabled accounts" />
+        <PortalStatCard label="Admins + owners" value={String(elevatedMembers)} meta="Financial and workspace operators" />
+        <PortalStatCard label="Your role" value={overview?.account.role ?? "member"} meta="Current user permission level" />
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
-          <div>
-            <CardTitle>Members</CardTitle>
-            <CardDescription>
-              {team.length} {team.length === 1 ? "member" : "members"}
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {teamMutationError ? <p className="text-destructive mb-3 text-sm">{teamMutationError}</p> : null}
-          {teamLoading ? (
-            <div className="space-y-2">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : teamError ? (
-            <p className="text-destructive text-sm">{teamError}</p>
-          ) : sortedTeam.length === 0 ? (
-            <Empty className="border border-border/60 py-12">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <UserPlus />
-                </EmptyMedia>
-                <EmptyTitle>No team members</EmptyTitle>
-                <EmptyDescription>Add collaborators with owner or admin roles.</EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User ID</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden md:table-cell">Joined</TableHead>
-                  {canManageTeam ? <TableHead className="text-right">Actions</TableHead> : null}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedTeam.map((row) => {
-                  const isSelf = row.user_id === overview?.account.userId
-                  return (
-                    <TableRow key={`${row.user_id}-${row.created_at}`}>
-                      <TableCell className="max-w-[200px] truncate font-mono text-xs">{row.user_id}</TableCell>
-                      <TableCell>
-                        {canManageTeam && !isSelf ? (
-                          <Select
-                            value={row.role}
-                            onValueChange={(v) => {
-                              const next = v as "owner" | "admin" | "member"
-                              if (next === row.role) return
-                              if (next === "owner") {
-                                setRoleConfirm({ row, next })
-                              } else {
-                                void handleUpdateMemberRole(row, next)
-                              }
-                            }}
-                            disabled={updatingMemberRoleId === row.user_id}
-                          >
-                            <SelectTrigger className="h-11 w-[140px]" aria-label={`Role for ${row.user_id}`}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="member">Member</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
-                              {overview?.account.role === "owner" ? <SelectItem value="owner">Owner</SelectItem> : null}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <span className="capitalize">{row.role}</span>
-                        )}
-                      </TableCell>
-                      <TableCell>{row.is_active ? "Active" : "Inactive"}</TableCell>
-                      <TableCell className="hidden md:table-cell">{formatDate(row.created_at)}</TableCell>
-                      {canManageTeam ? (
-                        <TableCell className="text-right">
-                          {isSelf ? (
-                            <span className="text-muted-foreground text-xs">You</span>
-                          ) : (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => void handleToggleMemberStatus(row)}
-                              disabled={updatingMemberId === row.user_id}
-                            >
-                              {updatingMemberId === row.user_id ? "Updating…" : row.is_active ? "Deactivate" : "Reactivate"}
-                            </Button>
-                          )}
-                        </TableCell>
-                      ) : null}
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      {teamMutationError ? (
+        <PortalSurfaceCard title="Team update error">
+          <p className="text-sm text-rose-700 dark:text-rose-300">{teamMutationError}</p>
+        </PortalSurfaceCard>
+      ) : null}
+
+      {teamLoading ? <PortalLoadingState label="Loading team workspace..." /> : null}
+      {!teamLoading && teamError ? (
+        <PortalSurfaceCard title="Team unavailable">
+          <p className="text-sm text-rose-700 dark:text-rose-300">{teamError}</p>
+        </PortalSurfaceCard>
+      ) : null}
+
+      {!teamLoading && !teamError && sortedTeam.length === 0 ? (
+        <PortalEmptyState
+          title="No team members"
+          description="Add collaborators with owner or admin roles."
+          action={<UserPlus className="mx-auto size-5" />}
+        />
+      ) : null}
+
+      {!teamLoading && !teamError && sortedTeam.length > 0 ? (
+        <PortalDataTable
+          title="Members"
+          description={`${team.length} ${team.length === 1 ? "member" : "members"} in this workspace.`}
+          rows={sortedTeam}
+          columns={teamColumns}
+          getRowId={(row) => `${row.user_id}-${row.created_at}`}
+          searchPlaceholder="Search team members"
+          searchMatcher={(row, query) => [row.user_id, row.role, row.is_active ? "active" : "inactive"].some((value) => String(value).toLowerCase().includes(query))}
+          emptyTitle="No team members"
+          emptyDescription="Invite collaborators to start distributing ownership and admin workflows."
+          filteredEmptyTitle="No team members match this search"
+          filteredEmptyDescription="Try a different user id or role search."
+        />
+      ) : null}
 
       <Sheet open={inviteOpen} onOpenChange={setInviteOpen}>
         <SheetContent className="w-full sm:max-w-md">

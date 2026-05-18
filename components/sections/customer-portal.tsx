@@ -1,14 +1,20 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Globe, LogOut, RefreshCcw, Send } from "lucide-react"
+import { FileText, LogOut, RefreshCcw, Send } from "lucide-react"
+import { Button as HeroButton, Chip, SearchField, Tabs } from "@heroui/react"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  EmbeddedPortalShell,
+  PortalActionButton,
+  PortalEmptyState,
+  PortalErrorState,
+  PortalLoadingState,
+  PortalStatCard,
+  PortalSurfaceCard,
+} from "@/components/portal/portal-primitives"
 import { Spinner } from "@/components/ui/spinner"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { createBrowserSupabaseClient } from "@/lib/supabase/client"
@@ -32,26 +38,7 @@ import {
   type SupportThread,
 } from "@/lib/statxeo/customer-client"
 
-import {
-  fetchSiteProjects,
-  type SiteProject,
-} from "@/lib/statxeo/site-project-client"
-
-type TabValue = "overview" | "orders" | "progress" | "documents" | "support" | "website"
-
-const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  awaiting_purchase: { label: "Awaiting Purchase", variant: "outline" },
-  awaiting_preferences: { label: "Setup Required", variant: "default" },
-  assets_pending: { label: "Upload Assets", variant: "default" },
-  ready_for_generation: { label: "Ready to Generate", variant: "default" },
-  generating: { label: "Generating...", variant: "secondary" },
-  preview_ready: { label: "Preview Ready", variant: "default" },
-  changes_requested: { label: "Changes Requested", variant: "secondary" },
-  approved: { label: "Approved", variant: "default" },
-  production_deploying: { label: "Deploying...", variant: "secondary" },
-  live: { label: "Live", variant: "default" },
-  failed: { label: "Failed", variant: "destructive" },
-}
+type TabValue = "overview" | "orders" | "progress" | "documents" | "support"
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof CustomerApiError) {
@@ -68,6 +55,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 export function CustomerPortalSection() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabValue>("overview")
+  const [searchQuery, setSearchQuery] = useState("")
   const [isRefreshing, setIsRefreshing] = useState(false)
 
   // Overview state
@@ -97,10 +85,6 @@ export function CustomerPortalSection() {
   const [messagesError, setMessagesError] = useState("")
   const [messageText, setMessageText] = useState("")
   const [isSendingMessage, setIsSendingMessage] = useState(false)
-
-  // Website state
-  const [websiteProjects, setWebsiteProjects] = useState<SiteProject[]>([])
-  const [websiteLoading, setWebsiteLoading] = useState(true)
 
   // Load overview on mount
   useEffect(() => {
@@ -210,23 +194,6 @@ export function CustomerPortalSection() {
     initializeSupport()
   }, [])
 
-  // Load website projects on mount
-  useEffect(() => {
-    async function loadWebsiteProjects() {
-      setWebsiteLoading(true)
-      try {
-        const data = await fetchSiteProjects()
-        setWebsiteProjects(data)
-      } catch {
-        setWebsiteProjects([])
-      } finally {
-        setWebsiteLoading(false)
-      }
-    }
-
-    loadWebsiteProjects()
-  }, [])
-
   // Set up realtime subscription for messages when thread is ready
   useEffect(() => {
     if (!threadId) return
@@ -318,9 +285,6 @@ export function CustomerPortalSection() {
       } else if (activeTab === "support" && threadId) {
         const msgs = await fetchCustomerSupportMessages({ thread_id: threadId })
         setMessages(msgs)
-      } else if (activeTab === "website") {
-        const data = await fetchSiteProjects()
-        setWebsiteProjects(data)
       }
     } catch (error) {
       console.error("Refresh failed:", error)
@@ -358,435 +322,358 @@ export function CustomerPortalSection() {
     }
   }
 
+  const normalizedSearch = searchQuery.trim().toLowerCase()
+
+  const filteredOrders = useMemo(() => {
+    if (!normalizedSearch) return ordersData
+    return ordersData.filter((order) => {
+      return [order.id, order.package_name, order.status]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(normalizedSearch))
+    })
+  }, [normalizedSearch, ordersData])
+
+  const filteredDocuments = useMemo(() => {
+    if (!normalizedSearch) return documentsData
+    return documentsData.filter((doc) => {
+      return [doc.name, doc.uploaded_at].filter(Boolean).some((value) => String(value).toLowerCase().includes(normalizedSearch))
+    })
+  }, [documentsData, normalizedSearch])
+
+  const filteredMessages = useMemo(() => {
+    if (!normalizedSearch) return messages
+    return messages.filter((msg) => msg.body.toLowerCase().includes(normalizedSearch))
+  }, [messages, normalizedSearch])
+
+  const searchPlaceholder =
+    activeTab === "orders"
+      ? "Search orders"
+      : activeTab === "documents"
+        ? "Search documents"
+        : activeTab === "support"
+          ? "Search messages"
+          : "Search this workspace"
+
+  const activeTabLabel: Record<TabValue, string> = {
+    overview: "Overview",
+    orders: "Orders",
+    progress: "Progress",
+    documents: "Documents",
+    support: "Support",
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 p-6 text-slate-950 dark:from-slate-950 dark:to-slate-900 dark:text-slate-50">
-      <div className="mx-auto max-w-6xl space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Customer Portal</h1>
-            <p className="text-slate-600 dark:text-slate-400">Manage your orders, workflow, and support</p>
+    <EmbeddedPortalShell className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 md:px-6 lg:px-8">
+      <section className="rounded-[16px] border border-slate-200 bg-white px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-white/10 dark:bg-transparent dark:shadow-none">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Chip size="sm" variant="soft" color="default">Customer Portal</Chip>
+              <Chip size="sm" variant="soft" color="default">{activeTabLabel[activeTab]}</Chip>
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-3xl">Manage orders, documents, and support</h1>
+              <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300 sm:text-[15px]">
+                Everything tied to your account lives in one workspace, with each section scoped to the task you need right now.
+              </p>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="gap-2"
-            >
-              <RefreshCcw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            <PortalActionButton variant="outline" className="rounded-[10px] border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100" onPress={handleRefresh} isDisabled={isRefreshing}>
+              <RefreshCcw className={cn("size-4", isRefreshing && "animate-spin")} />
               {isRefreshing ? "Refreshing..." : "Refresh"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSignOut}
-              className="gap-2"
-            >
-              <LogOut className="h-4 w-4" />
+            </PortalActionButton>
+            <PortalActionButton variant="danger-soft" className="rounded-[10px]" onPress={handleSignOut}>
+              <LogOut className="size-4" />
               Sign out
-            </Button>
+            </PortalActionButton>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <PortalStatCard
+          label="Active packages"
+          value={String(overviewData?.packages?.length ?? 0)}
+          meta={overviewLoading ? "Loading account summary" : "Products currently tied to your account"}
+        />
+        <PortalStatCard
+          label="Documents"
+          value={String(documentsData.length)}
+          meta={documentsLoading ? "Syncing files" : "Assets and downloadable deliverables"}
+        />
+        <PortalStatCard
+          label="Support activity"
+          value={String(messages.length)}
+          meta={messagesLoading ? "Connecting support thread" : "Messages in your account thread"}
+        />
+      </div>
+
+      <Tabs.Root
+        selectedKey={activeTab}
+        onSelectionChange={(key) => setActiveTab(String(key) as TabValue)}
+        className="w-full space-y-5"
+      >
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <Tabs.List className="grid w-full grid-cols-2 gap-2 rounded-[14px] border border-slate-200 bg-white p-1 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-white/10 dark:bg-white/5 dark:shadow-none md:grid-cols-3 xl:grid-cols-5">
+                <Tabs.Tab id="overview">Overview</Tabs.Tab>
+                <Tabs.Tab id="orders">Orders</Tabs.Tab>
+                <Tabs.Tab id="progress">Progress</Tabs.Tab>
+                <Tabs.Tab id="documents">Documents</Tabs.Tab>
+                <Tabs.Tab id="support">Support</Tabs.Tab>
+          </Tabs.List>
+
+          <div className="flex flex-col gap-1 lg:min-w-[220px] lg:items-end">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{activeTabLabel[activeTab]}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Search stays scoped to this view.</p>
           </div>
         </div>
 
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabValue)}>
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="website" className="gap-1.5">
-              <Globe className="h-3.5 w-3.5" />
-              Website
-            </TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="progress">Progress</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="support">Support</TabsTrigger>
-          </TabsList>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{activeTabLabel[activeTab]}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Use this section to review only the details tied to the current task.</p>
+          </div>
+          {activeTab !== "overview" && activeTab !== "progress" ? (
+            <SearchField.Root aria-label={searchPlaceholder} className="w-full md:max-w-sm" value={searchQuery} onChange={setSearchQuery}>
+              <SearchField.Group>
+                <SearchField.SearchIcon />
+                <SearchField.Input placeholder={searchPlaceholder} />
+                <SearchField.ClearButton aria-label="Clear search" />
+              </SearchField.Group>
+            </SearchField.Root>
+          ) : null}
+        </div>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-4">
-            {overviewLoading && (
-              <Card className="neo-surface border-white/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/50">
-                <CardContent className="flex items-center justify-center py-12">
-                  <div className="flex items-center gap-3">
-                    <Spinner />
-                    <span>Loading overview...</span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+        <div>
+          <Tabs.Panel id="overview" className="space-y-4">
+                  {overviewLoading ? <PortalLoadingState label="Loading overview..." /> : null}
 
-            {overviewError && (
-              <Card className="neo-surface border-red-200 bg-red-50/50 backdrop-blur dark:border-red-900/50 dark:bg-red-950/30">
-                <CardContent className="py-4">
-                  <p className="text-red-700 dark:text-red-200">{overviewError}</p>
-                </CardContent>
-              </Card>
-            )}
+                  {overviewError ? <PortalErrorState title="Overview unavailable" message={overviewError} /> : null}
 
-            {overviewData && !overviewLoading && (
-              <div className="space-y-4">
-                <Card className="neo-surface border-white/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/50">
-                  <CardHeader>
-                    <CardTitle>Account Overview</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {overviewData.packages && overviewData.packages.length > 0 ? (
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {overviewData.packages.map((pkg) => (
-                          <div key={pkg.id} className="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
-                            <p className="font-semibold">{pkg.name}</p>
-                            <p className="text-sm text-slate-600 dark:text-slate-400">
-                              Status: <span className="font-medium capitalize">{pkg.status}</span>
-                            </p>
-                            {pkg.expires_at && (
-                              <p className="text-sm text-slate-600 dark:text-slate-400">
-                                Expires: {new Date(pkg.expires_at).toLocaleDateString()}
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-slate-600 dark:text-slate-400">No active packages</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Website Tab */}
-          <TabsContent value="website" className="space-y-4">
-            {websiteLoading && (
-              <Card className="neo-surface border-white/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/50">
-                <CardContent className="flex items-center justify-center py-12">
-                  <div className="flex items-center gap-3">
-                    <Spinner />
-                    <span>Loading website project...</span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {!websiteLoading && websiteProjects.length === 0 && (
-              <Card className="neo-surface border-white/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/50">
-                <CardContent className="flex flex-col items-center justify-center py-16">
-                  <Globe className="mb-4 h-12 w-12 text-slate-400" />
-                  <p className="text-lg font-medium text-slate-700 dark:text-slate-300">No Website Project Yet</p>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Your website project will appear here after your purchase is confirmed.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {!websiteLoading && websiteProjects.length > 0 && (
-              <div className="space-y-4">
-                {websiteProjects.map((project) => {
-                  const statusInfo = STATUS_LABELS[project.status] ?? { label: project.status, variant: "outline" as const }
-                  return (
-                    <Card key={project.id} className="neo-surface border-white/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/50">
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <CardTitle className="text-lg">{project.business_name ?? "Website Project"}</CardTitle>
-                            <CardDescription className="capitalize">
-                              {project.package_tier.replace("statxeo_", "")} package
-                            </CardDescription>
-                          </div>
-                          <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                  {overviewData && !overviewLoading ? (
+                    <PortalSurfaceCard title="Account overview" description="Your packages and renewal timing live here; no fulfillment logic was changed.">
+                      {overviewData.packages && overviewData.packages.length > 0 ? (
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                          {overviewData.packages.map((pkg) => (
+                            <div key={pkg.id} className="rounded-2xl border border-slate-200/80 bg-white/85 p-4 dark:border-white/8 dark:bg-white/5">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="font-semibold text-slate-900 dark:text-white">{pkg.name}</p>
+                                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{pkg.status.replace(/_/g, " ")}</p>
+                                </div>
+                                <Chip size="sm" variant="soft" color="success">Active</Chip>
+                              </div>
+                              {pkg.expires_at ? (
+                                <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
+                                  Expires {new Date(pkg.expires_at).toLocaleDateString()}
+                                </p>
+                              ) : null}
+                            </div>
+                          ))}
                         </div>
-                      </CardHeader>
-                      <CardContent className="flex items-center gap-3">
-                        <Button
-                          size="sm"
-                          onClick={() => router.push("/customer/website")}
-                          className="gap-2"
-                        >
-                          <Globe className="h-4 w-4" />
-                          {project.status === "awaiting_preferences" || project.status === "assets_pending"
-                            ? "Complete Setup"
-                            : project.status === "preview_ready" || project.status === "changes_requested"
-                              ? "View Preview"
-                              : project.status === "live"
-                                ? "View Website"
-                                : "View Details"}
-                        </Button>
-                        {project.preview_url && (
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={project.preview_url} target="_blank" rel="noopener noreferrer" className="gap-2">
-                              Preview
-                            </a>
-                          </Button>
-                        )}
-                        {project.production_url && (
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={project.production_url} target="_blank" rel="noopener noreferrer" className="gap-2">
-                              Live Site
-                            </a>
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Orders Tab */}
-          <TabsContent value="orders" className="space-y-4">
-            {ordersLoading && (
-              <Card className="neo-surface border-white/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/50">
-                <CardContent className="flex items-center justify-center py-12">
-                  <div className="flex items-center gap-3">
-                    <Spinner />
-                    <span>Loading orders...</span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {ordersError && (
-              <Card className="neo-surface border-red-200 bg-red-50/50 backdrop-blur dark:border-red-900/50 dark:bg-red-950/30">
-                <CardContent className="py-4">
-                  <p className="text-red-700 dark:text-red-200">{ordersError}</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {!ordersLoading && ordersData.length === 0 && !ordersError && (
-              <Card className="neo-surface border-white/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/50">
-                <CardContent className="flex items-center justify-center py-12">
-                  <p className="text-slate-600 dark:text-slate-400">No orders found</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {!ordersLoading && ordersData.length > 0 && (
-              <div className="space-y-4">
-                {ordersData.map((order) => (
-                  <Card key={order.id} className="neo-surface border-white/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/50">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Order {order.id.slice(0, 8)}</CardTitle>
-                      <CardDescription>{new Date(order.created_at).toLocaleDateString()}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <p><span className="font-semibold">Package:</span> {order.package_name}</p>
-                      <p><span className="font-semibold">Status:</span> <span className="capitalize">{order.status}</span></p>
-                      {order.amount_cents && (
-                        <p><span className="font-semibold">Amount:</span> ${(order.amount_cents / 100).toFixed(2)}</p>
+                      ) : (
+                        <PortalEmptyState title="No active packages" description="Once a package is attached to your account, it will show up here automatically." />
                       )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
+                    </PortalSurfaceCard>
+                  ) : null}
+                  </Tabs.Panel>
 
-          {/* Progress Tab */}
-          <TabsContent value="progress" className="space-y-4">
-            {workflowLoading && (
-              <Card className="neo-surface border-white/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/50">
-                <CardContent className="flex items-center justify-center py-12">
-                  <div className="flex items-center gap-3">
-                    <Spinner />
-                    <span>Loading progress...</span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                  <Tabs.Panel id="orders" className="space-y-4">
+                  {ordersLoading ? <PortalLoadingState label="Loading orders..." /> : null}
+                  {ordersError ? <PortalErrorState title="Orders unavailable" message={ordersError} /> : null}
 
-            {workflowError && (
-              <Card className="neo-surface border-red-200 bg-red-50/50 backdrop-blur dark:border-red-900/50 dark:bg-red-950/30">
-                <CardContent className="py-4">
-                  <p className="text-red-700 dark:text-red-200">{workflowError}</p>
-                </CardContent>
-              </Card>
-            )}
+                  {!ordersLoading && filteredOrders.length === 0 && !ordersError ? (
+                    <PortalEmptyState
+                      title={ordersData.length === 0 ? "No orders found" : "No matching orders"}
+                      description={ordersData.length === 0 ? "Orders will appear here after checkout and fulfillment begin." : "Try a different order search term."}
+                    />
+                  ) : null}
 
-            {workflowData && !workflowLoading && (
-              <Card className="neo-surface border-white/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/50">
-                <CardHeader>
-                  <CardTitle>Website Build Progress</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {workflowData.stages && workflowData.stages.length > 0 ? (
-                    <div className="space-y-3">
-                      {workflowData.stages.map((stage, idx) => (
-                        <div key={idx} className="flex items-start gap-3">
-                          <div className="mt-1 h-2 w-2 rounded-full bg-slate-400 dark:bg-slate-600" />
-                          <div>
-                            <p className="font-semibold">{stage.name}</p>
-                            {stage.description && (
-                              <p className="text-sm text-slate-600 dark:text-slate-400">{stage.description}</p>
-                            )}
-                            {stage.completed_at && (
-                              <p className="text-sm text-slate-600 dark:text-slate-400">
-                                Completed: {new Date(stage.completed_at).toLocaleDateString()}
-                              </p>
-                            )}
+                  {!ordersLoading && filteredOrders.length > 0 ? (
+                    <div className="grid gap-4 xl:grid-cols-2">
+                      {filteredOrders.map((order) => (
+                        <PortalSurfaceCard
+                          key={order.id}
+                          title={`Order ${order.id.slice(0, 8)}`}
+                          description={new Date(order.created_at).toLocaleDateString()}
+                        >
+                          <div className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
+                            <div className="flex items-center justify-between rounded-2xl border border-slate-200/80 px-4 py-3 dark:border-white/8">
+                              <span>Package</span>
+                              <span className="font-semibold text-slate-900 dark:text-white">{order.package_name}</span>
+                            </div>
+                            <div className="flex items-center justify-between rounded-2xl border border-slate-200/80 px-4 py-3 dark:border-white/8">
+                              <span>Status</span>
+                              <Chip size="sm" variant="soft" color="accent">{order.status}</Chip>
+                            </div>
+                            {order.amount_cents ? (
+                              <div className="flex items-center justify-between rounded-2xl border border-slate-200/80 px-4 py-3 dark:border-white/8">
+                                <span>Amount</span>
+                                <span className="font-semibold text-slate-900 dark:text-white">${(order.amount_cents / 100).toFixed(2)}</span>
+                              </div>
+                            ) : null}
                           </div>
-                        </div>
+                        </PortalSurfaceCard>
                       ))}
                     </div>
-                  ) : (
-                    <p className="text-slate-600 dark:text-slate-400">No workflow stages</p>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
+                  ) : null}
+                  </Tabs.Panel>
 
-          {/* Documents Tab */}
-          <TabsContent value="documents" className="space-y-4">
-            {documentsLoading && (
-              <Card className="neo-surface border-white/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/50">
-                <CardContent className="flex items-center justify-center py-12">
-                  <div className="flex items-center gap-3">
-                    <Spinner />
-                    <span>Loading documents...</span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                  <Tabs.Panel id="progress" className="space-y-4">
+                  {workflowLoading ? <PortalLoadingState label="Loading progress..." /> : null}
+                  {workflowError ? <PortalErrorState title="Progress unavailable" message={workflowError} /> : null}
 
-            {documentsError && (
-              <Card className="neo-surface border-red-200 bg-red-50/50 backdrop-blur dark:border-red-900/50 dark:bg-red-950/30">
-                <CardContent className="py-4">
-                  <p className="text-red-700 dark:text-red-200">{documentsError}</p>
-                </CardContent>
-              </Card>
-            )}
+                  {workflowData && !workflowLoading ? (
+                    <PortalSurfaceCard title="Website build progress" description="Stages remain sourced from the current workflow endpoint.">
+                      {workflowData.stages && workflowData.stages.length > 0 ? (
+                        <div className="space-y-3">
+                          {workflowData.stages.map((stage, idx) => (
+                            <div key={idx} className="flex items-start gap-4 rounded-2xl border border-slate-200/80 bg-white/70 px-4 py-4 dark:border-white/8 dark:bg-white/5">
+                              <div className="mt-1 size-2 rounded-full bg-sky-500" />
+                              <div className="space-y-1">
+                                <p className="font-semibold text-slate-900 dark:text-white">{stage.name}</p>
+                                {stage.description ? <p className="text-sm text-slate-600 dark:text-slate-300">{stage.description}</p> : null}
+                                {stage.completed_at ? (
+                                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                                    Completed {new Date(stage.completed_at).toLocaleDateString()}
+                                  </p>
+                                ) : null}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <PortalEmptyState title="No workflow stages" description="Stages will appear here as your delivery workflow advances." />
+                      )}
+                    </PortalSurfaceCard>
+                  ) : null}
+                  </Tabs.Panel>
 
-            {!documentsLoading && documentsData.length === 0 && !documentsError && (
-              <Card className="neo-surface border-white/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/50">
-                <CardContent className="flex items-center justify-center py-12">
-                  <p className="text-slate-600 dark:text-slate-400">No documents available</p>
-                </CardContent>
-              </Card>
-            )}
+                  <Tabs.Panel id="documents" className="space-y-4">
+                  {documentsLoading ? <PortalLoadingState label="Loading documents..." /> : null}
+                  {documentsError ? <PortalErrorState title="Documents unavailable" message={documentsError} /> : null}
 
-            {!documentsLoading && documentsData.length > 0 && (
-              <div className="space-y-2">
-                {documentsData.map((doc) => (
-                  <Card key={doc.id} className="neo-surface border-white/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/50">
-                    <CardContent className="flex items-center justify-between py-4">
-                      <div>
-                        <p className="font-semibold">{doc.name}</p>
-                        {doc.uploaded_at && (
-                          <p className="text-sm text-slate-600 dark:text-slate-400">
-                            {new Date(doc.uploaded_at).toLocaleDateString()}
-                          </p>
+                  {!documentsLoading && filteredDocuments.length === 0 && !documentsError ? (
+                    <PortalEmptyState
+                      title={documentsData.length === 0 ? "No documents available" : "No matching documents"}
+                      description={documentsData.length === 0 ? "Assets and deliverables will appear here when they are ready." : "Try a different document search term."}
+                    />
+                  ) : null}
+
+                  {!documentsLoading && filteredDocuments.length > 0 ? (
+                    <div className="grid gap-4 xl:grid-cols-2">
+                      {filteredDocuments.map((doc) => (
+                        <PortalSurfaceCard key={doc.id} title={doc.name} description={doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleDateString() : "Ready to download"}>
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                              <FileText className="size-4" />
+                              <span>Secure download</span>
+                            </div>
+                            <HeroButton
+                              size="sm"
+                              variant="outline"
+                              onPress={() => {
+                                window.location.href = `/api/customer/documents/download?document_id=${doc.id}`
+                              }}
+                            >
+                              Download
+                            </HeroButton>
+                          </div>
+                        </PortalSurfaceCard>
+                      ))}
+                    </div>
+                  ) : null}
+                  </Tabs.Panel>
+
+                  <Tabs.Panel id="support" className="space-y-4">
+                  <PortalSurfaceCard title="Support chat" description="Realtime and polling behavior is unchanged; only the message surface was modernized.">
+                    <div className="flex h-[600px] flex-col gap-4">
+                      <div className="grid gap-3 md:grid-cols-3">
+                        <div className="rounded-2xl border border-slate-200/80 bg-white/70 px-4 py-3 text-sm dark:border-white/8 dark:bg-white/5">
+                          <p className="text-slate-500 dark:text-slate-400">Thread status</p>
+                          <p className="mt-1 font-semibold text-slate-900 dark:text-white">{threadId ? "Connected" : "Starting thread"}</p>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200/80 bg-white/70 px-4 py-3 text-sm dark:border-white/8 dark:bg-white/5">
+                          <p className="text-slate-500 dark:text-slate-400">Messages</p>
+                          <p className="mt-1 font-semibold text-slate-900 dark:text-white">{messages.length}</p>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200/80 bg-white/70 px-4 py-3 text-sm dark:border-white/8 dark:bg-white/5">
+                          <p className="text-slate-500 dark:text-slate-400">Response mode</p>
+                          <p className="mt-1 font-semibold text-slate-900 dark:text-white">Realtime + polling fallback</p>
+                        </div>
+                      </div>
+
+                      <div className="flex-1 overflow-hidden rounded-3xl border border-slate-200/80 bg-white/65 dark:border-white/8 dark:bg-black/20">
+                        {messagesLoading ? (
+                          <div className="flex h-full items-center justify-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                            <Spinner />
+                            <span>Loading messages...</span>
+                          </div>
+                        ) : messagesError ? (
+                          <div className="p-4">
+                            <p className="text-sm text-rose-700 dark:text-rose-300">{messagesError}</p>
+                          </div>
+                        ) : (
+                          <ScrollArea className="h-full">
+                            <div className="space-y-3 p-4">
+                              {filteredMessages.length === 0 ? (
+                                <p className="text-sm text-slate-600 dark:text-slate-300">
+                                  {messages.length === 0 ? "No messages yet. Start the conversation." : "No messages match your search."}
+                                </p>
+                              ) : (
+                                filteredMessages.map((msg) => (
+                                  <div key={msg.id} className={cn("flex gap-3", msg.is_from_staff ? "justify-start" : "justify-end")}>
+                                    <div
+                                      className={cn(
+                                        "max-w-md rounded-2xl px-4 py-3 shadow-sm",
+                                        msg.is_from_staff
+                                          ? "border border-slate-200 bg-slate-100 text-slate-900 dark:border-white/8 dark:bg-white/8 dark:text-white"
+                                          : "bg-sky-600 text-white",
+                                      )}
+                                    >
+                                      <p className="text-sm leading-6">{msg.body}</p>
+                                      <p className={cn("mt-2 text-xs", msg.is_from_staff ? "text-slate-500 dark:text-slate-300" : "text-sky-100")}>
+                                        {new Date(msg.created_at).toLocaleTimeString()}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </ScrollArea>
                         )}
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => window.location.href = `/api/customer/documents/download?document_id=${doc.id}`}
-                      >
-                        Download
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
 
-          {/* Support Tab */}
-          <TabsContent value="support" className="space-y-4">
-            <Card className="neo-surface flex h-[600px] flex-col border-white/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/50">
-              <CardHeader>
-                <CardTitle>Support Chat</CardTitle>
-                <CardDescription>Message our support team</CardDescription>
-              </CardHeader>
-
-              {/* Messages Area */}
-              <div className="flex-1 overflow-hidden">
-                {messagesLoading ? (
-                  <div className="flex h-full items-center justify-center">
-                    <div className="flex items-center gap-3">
-                      <Spinner />
-                      <span>Loading messages...</span>
+                      <div className="flex gap-2">
+                        <Textarea
+                          placeholder="Type your message..."
+                          value={messageText}
+                          onChange={(e) => setMessageText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && e.ctrlKey) {
+                              handleSendMessage()
+                            }
+                          }}
+                          className="max-h-24 flex-1 resize-none rounded-2xl border-slate-200/80 bg-white/85 dark:border-white/8 dark:bg-white/5"
+                          rows={2}
+                        />
+                        <HeroButton
+                          onPress={handleSendMessage}
+                          isDisabled={!messageText.trim() || isSendingMessage}
+                          variant="primary"
+                          className="h-auto"
+                        >
+                          <Send className="size-4" />
+                          {isSendingMessage ? "Sending..." : "Send"}
+                        </HeroButton>
+                      </div>
                     </div>
-                  </div>
-                ) : messagesError ? (
-                  <div className="p-4">
-                    <p className="text-red-700 dark:text-red-200">{messagesError}</p>
-                  </div>
-                ) : (
-                  <ScrollArea className="h-full">
-                    <div className="space-y-3 p-4">
-                      {messages.length === 0 ? (
-                        <p className="text-slate-600 dark:text-slate-400">No messages yet. Start the conversation!</p>
-                      ) : (
-                        messages.map((msg) => (
-                          <div
-                            key={msg.id}
-                            className={cn(
-                              "flex gap-3",
-                              msg.is_from_staff ? "justify-start" : "justify-end"
-                            )}
-                          >
-                            <div
-                              className={cn(
-                                "max-w-xs rounded-lg px-3 py-2",
-                                msg.is_from_staff
-                                  ? "bg-slate-200 dark:bg-slate-700"
-                                  : "bg-blue-500 text-white dark:bg-blue-600"
-                              )}
-                            >
-                              <p className="text-sm">{msg.body}</p>
-                              <p className={cn(
-                                "mt-1 text-xs",
-                                msg.is_from_staff
-                                  ? "text-slate-600 dark:text-slate-300"
-                                  : "text-blue-100"
-                              )}>
-                                {new Date(msg.created_at).toLocaleTimeString()}
-                              </p>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </ScrollArea>
-                )}
-              </div>
-
-              {/* Message Input */}
-              <div className="border-t border-slate-200 p-4 dark:border-slate-700">
-                <div className="flex gap-2">
-                  <Textarea
-                    placeholder="Type your message..."
-                    value={messageText}
-                    onChange={(e) => setMessageText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && e.ctrlKey) {
-                        handleSendMessage()
-                      }
-                    }}
-                    className="max-h-20 flex-1 resize-none"
-                    rows={2}
-                  />
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={!messageText.trim() || isSendingMessage}
-                    size="sm"
-                    className="h-auto gap-2"
-                  >
-                    <Send className="h-4 w-4" />
-                    {isSendingMessage ? "Sending..." : "Send"}
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
+                  </PortalSurfaceCard>
+          </Tabs.Panel>
+        </div>
+      </Tabs.Root>
+    </EmbeddedPortalShell>
   )
 }

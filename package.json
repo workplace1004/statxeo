@@ -11,9 +11,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.64",
-    "@ai-sdk/openai": "^3.0.49",
     "@gsap/react": "^2.1.2",
+    "@heroui-pro/react": "1.0.0-beta.3",
+    "@heroui/react": "^3.0.4",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "1.2.12",
     "@radix-ui/react-alert-dialog": "1.1.15",
@@ -49,7 +49,6 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
     "@vercel/analytics": "1.6.1",
-    "ai": "^6.0.142",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -77,13 +76,13 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "eslint": "^9.39.1",
-    "eslint-config-next": "^16.2.2",
     "@tailwindcss/postcss": "^4.2.0",
     "@types/node": "^22",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@types/three": "^0.183.1",
+    "eslint": "^9.39.1",
+    "eslint-config-next": "^16.2.2",
     "postcss": "^8.5",
     "supabase": "^2.84.10",
     "tailwindcss": "^4.2.0",

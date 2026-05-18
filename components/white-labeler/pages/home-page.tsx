@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   AlertCircle,
   ArrowRight,
@@ -13,10 +14,10 @@ import {
   Users,
   Wallet,
 } from "lucide-react"
+import { Avatar, Button as HeroButton, Card as HeroCard, Chip as HeroChip } from "@heroui/react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -45,6 +46,7 @@ type FeedItem = {
 }
 
 export function WhiteLabelerHomePage() {
+  const router = useRouter()
   const {
     overview,
     overviewLoading,
@@ -149,15 +151,84 @@ export function WhiteLabelerHomePage() {
 
   if (!overview) return null
 
+  const displayName = overview.account.displayName?.trim() || "White-label partner"
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((token) => token[0]?.toUpperCase() ?? "")
+    .join("") || "WL"
+
   return (
     <div className="space-y-8">
-      <div>
-        <p className="text-muted-foreground text-sm font-medium uppercase tracking-wider">Overview</p>
-        <h2 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{heroLine}</h2>
-        <p className="text-muted-foreground mt-2 max-w-2xl text-sm">
-          This is your command center—setup, revenue, and payouts stay separated so you always know what to do next.
-        </p>
-      </div>
+      <HeroCard variant="secondary" className="overflow-hidden border border-white/8 bg-white/4 shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
+        <HeroCard.Content className="grid gap-6 px-5 py-5 sm:px-6 sm:py-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <Avatar size="lg" variant="soft">
+                <Avatar.Fallback>{initials}</Avatar.Fallback>
+              </Avatar>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <HeroChip size="sm" variant="soft" color="accent">
+                    Overview
+                  </HeroChip>
+                  <HeroChip size="sm" variant="soft" color={canSell ? "success" : "warning"}>
+                    {canSell ? "Live" : "Setup in progress"}
+                  </HeroChip>
+                </div>
+                <p className="mt-2 text-sm font-medium text-muted-foreground">{displayName}</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{heroLine}</h2>
+              <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
+                This is your command center. Setup, revenue, payouts, and operational actions are separated so the next step is always obvious.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <HeroButton size="sm" variant="primary" onPress={() => router.push("/white-labeler/clients")}>
+                <Plus className="size-4" />
+                Add client
+              </HeroButton>
+              <HeroButton size="sm" variant="secondary" onPress={() => router.push("/white-labeler/clients")}>
+                Create checkout link
+              </HeroButton>
+              <HeroButton size="sm" variant="outline" onPress={() => router.push("/white-labeler/payouts")}>
+                View payouts
+              </HeroButton>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:min-w-72 sm:grid-cols-2 lg:grid-cols-1">
+            <HeroCard variant="tertiary" className="border border-white/8 bg-black/20">
+              <HeroCard.Header>
+                <HeroCard.Description>Launch readiness</HeroCard.Description>
+                <HeroCard.Title>{overview.onboarding.percentComplete}% complete</HeroCard.Title>
+              </HeroCard.Header>
+              <HeroCard.Content className="space-y-3">
+                <Progress value={overview.onboarding.percentComplete} className="h-2" />
+                <p className="text-sm text-muted-foreground">
+                  {completedSteps}/{totalSteps} checklist items completed.
+                </p>
+              </HeroCard.Content>
+            </HeroCard>
+            <HeroCard variant="tertiary" className="border border-white/8 bg-black/20">
+              <HeroCard.Header>
+                <HeroCard.Description>Monthly net payout</HeroCard.Description>
+                <HeroCard.Title>{formatCents(overview.kpis.monthNetPayoutCents, accountCurrency)}</HeroCard.Title>
+              </HeroCard.Header>
+              <HeroCard.Content>
+                <p className="text-sm text-muted-foreground">
+                  Net after plan costs and white-label fees for the current cycle.
+                </p>
+              </HeroCard.Content>
+            </HeroCard>
+          </div>
+        </HeroCard.Content>
+      </HeroCard>
 
       {stripeReturnQuery === "active" ? (
         <Alert className="border-emerald-500/30 bg-emerald-500/10">
@@ -184,15 +255,15 @@ export function WhiteLabelerHomePage() {
       ) : null}
 
       {showSetupBanner ? (
-        <Card className="border-amber-500/25 bg-amber-500/5">
+        <HeroCard variant="secondary" className="border border-amber-500/25 bg-amber-500/8">
           <Collapsible open={setupOpen} onOpenChange={setSetupOpen}>
-            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 pb-2">
+            <HeroCard.Header className="flex flex-row flex-wrap items-start justify-between gap-3 pb-2">
               <div className="space-y-1">
-                <CardTitle className="text-lg">Finish setup</CardTitle>
-                <CardDescription>
+                <HeroCard.Title className="text-lg">Finish setup</HeroCard.Title>
+                <HeroCard.Description>
                   {completedSteps}/{totalSteps} checklist items done. Complete the blockers below to sell with live checkout
                   links.
-                </CardDescription>
+                </HeroCard.Description>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Button asChild size="sm">
@@ -222,9 +293,9 @@ export function WhiteLabelerHomePage() {
                   </Button>
                 </CollapsibleTrigger>
               </div>
-            </CardHeader>
+            </HeroCard.Header>
             <CollapsibleContent>
-              <CardContent className="space-y-3 border-t border-border/60 pt-4">
+              <HeroCard.Content className="space-y-3 border-t border-border/60 pt-4">
                 <div className="flex items-center gap-3">
                   <Progress value={overview.onboarding.percentComplete} className="h-2 flex-1" />
                   <span className="text-muted-foreground text-xs tabular-nums">{overview.onboarding.percentComplete}%</span>
@@ -239,76 +310,61 @@ export function WhiteLabelerHomePage() {
                     ))}
                   </ul>
                 ) : null}
-              </CardContent>
+              </HeroCard.Content>
             </CollapsibleContent>
           </Collapsible>
-        </Card>
+        </HeroCard>
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Active clients</CardDescription>
+        <HeroCard variant="secondary" className="border border-white/8 bg-white/4">
+          <HeroCard.Header className="flex flex-row items-center justify-between pb-2">
+            <HeroCard.Description>Active clients</HeroCard.Description>
             <Users className="text-muted-foreground size-4" aria-hidden />
-          </CardHeader>
-          <CardContent>
+          </HeroCard.Header>
+          <HeroCard.Content>
             <p className="text-3xl font-bold tabular-nums">{overview.kpis.activeClients}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Month revenue</CardDescription>
+          </HeroCard.Content>
+        </HeroCard>
+        <HeroCard variant="secondary" className="border border-white/8 bg-white/4">
+          <HeroCard.Header className="flex flex-row items-center justify-between pb-2">
+            <HeroCard.Description>Month revenue</HeroCard.Description>
             <CreditCard className="text-muted-foreground size-4" aria-hidden />
-          </CardHeader>
-          <CardContent>
+          </HeroCard.Header>
+          <HeroCard.Content>
             <p className="text-3xl font-bold tabular-nums">{formatCents(overview.kpis.monthRevenueCents, accountCurrency)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Outstanding drafts</CardDescription>
+          </HeroCard.Content>
+        </HeroCard>
+        <HeroCard variant="secondary" className="border border-white/8 bg-white/4">
+          <HeroCard.Header className="flex flex-row items-center justify-between pb-2">
+            <HeroCard.Description>Outstanding drafts</HeroCard.Description>
             <Wallet className="text-muted-foreground size-4" aria-hidden />
-          </CardHeader>
-          <CardContent>
+          </HeroCard.Header>
+          <HeroCard.Content>
             <p className="text-3xl font-bold tabular-nums">
               {formatCents(overview.kpis.outstandingDraftPayoutCents, accountCurrency)}
             </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Net payout (month)</CardDescription>
+          </HeroCard.Content>
+        </HeroCard>
+        <HeroCard variant="secondary" className="border border-white/8 bg-white/4">
+          <HeroCard.Header className="flex flex-row items-center justify-between pb-2">
+            <HeroCard.Description>Net payout (month)</HeroCard.Description>
             <Sparkles className="text-muted-foreground size-4" aria-hidden />
-          </CardHeader>
-          <CardContent>
+          </HeroCard.Header>
+          <HeroCard.Content>
             <p className="text-3xl font-bold tabular-nums">
               {formatCents(overview.kpis.monthNetPayoutCents, accountCurrency)}
             </p>
-          </CardContent>
-        </Card>
+          </HeroCard.Content>
+        </HeroCard>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <Button asChild>
-          <Link href="/white-labeler/clients">
-            <Plus className="size-4" />
-            Add client
-          </Link>
-        </Button>
-        <Button asChild variant="secondary">
-          <Link href="/white-labeler/clients">Create checkout link</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/white-labeler/payouts">View payouts</Link>
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Recent activity</CardTitle>
-          <CardDescription>Latest charges, clients, and payout updates.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <HeroCard variant="secondary" className="border border-white/8 bg-white/4">
+        <HeroCard.Header>
+          <HeroCard.Title className="text-lg">Recent activity</HeroCard.Title>
+          <HeroCard.Description>Latest charges, clients, and payout updates.</HeroCard.Description>
+        </HeroCard.Header>
+        <HeroCard.Content>
           {activityFeed.length === 0 ? (
             <p className="text-muted-foreground text-sm">No activity yet—create a client or connect Stripe to get started.</p>
           ) : (
@@ -329,8 +385,8 @@ export function WhiteLabelerHomePage() {
               ))}
             </ul>
           )}
-        </CardContent>
-      </Card>
+        </HeroCard.Content>
+      </HeroCard>
     </div>
   )
 }

@@ -3,12 +3,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ClipboardList, LogOut, RefreshCcw } from "lucide-react"
+import { ClipboardList } from "lucide-react"
+import { Chip, SearchField } from "@heroui/react"
 
+import {
+  EmbeddedPortalShell,
+  PortalActionButton,
+  PortalHero,
+  PortalSurfaceCard,
+} from "@/components/portal/portal-primitives"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
@@ -24,7 +29,6 @@ import {
   type WhiteLabelerApplicationApprovalResponse,
 } from "@/lib/statxeo/white-labeler-client"
 import { cn } from "@/lib/utils"
-
 type FilterValue = "pending_review" | "approved" | "invited" | "rejected" | "all"
 
 function describeError(error: unknown, fallback: string) {
@@ -49,15 +53,15 @@ function formatDateTime(value: string | null | undefined) {
 export function WhiteLabelerApplicationsAdminSection() {
   const router = useRouter()
   const [filter, setFilter] = useState<FilterValue>("pending_review")
+  const [searchQuery, setSearchQuery] = useState("")
   const [applications, setApplications] = useState<WhiteLabelerAdminApplication[]>([])
   const [selectedApplicationId, setSelectedApplicationId] = useState<string>("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [isSigningOut, setIsSigningOut] = useState(false)
   const [mutationError, setMutationError] = useState("")
   const [mutationSuccess, setMutationSuccess] = useState("")
   const [approvalResult, setApprovalResult] = useState<WhiteLabelerApplicationApprovalResponse["approval"] | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [isSubmittingDecision, setIsSubmittingDecision] = useState(false)
   const [isSendingInvite, setIsSendingInvite] = useState(false)
   const [reviewForm, setReviewForm] = useState({
@@ -102,6 +106,24 @@ export function WhiteLabelerApplicationsAdminSection() {
     return applications.find((application) => application.id === selectedApplicationId) ?? null
   }, [applications, selectedApplicationId])
 
+  const filteredApplications = useMemo(() => {
+    const normalized = searchQuery.trim().toLowerCase()
+    if (!normalized) return applications
+
+    return applications.filter((application) => {
+      return [
+        application.company_name,
+        application.contact_full_name,
+        application.contact_email,
+        application.desired_slug,
+        application.company_website,
+        application.referred_by,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(normalized))
+    })
+  }, [applications, searchQuery])
+
   useEffect(() => {
     if (!selectedApplication) {
       setReviewForm({
@@ -133,20 +155,7 @@ export function WhiteLabelerApplicationsAdminSection() {
     }
   }
 
-  const handleSignOut = async () => {
-    setIsSigningOut(true)
-
-    try {
-      const supabase = createBrowserSupabaseClient()
-      await supabase.auth.signOut()
-      router.replace("/white-labeler/login")
-      router.refresh()
-    } finally {
-      setIsSigningOut(false)
-    }
-  }
-
-  const handleDecision = async (decision: "approve" | "reject") => {
+  const handleReview = async (decision: "approve" | "reject") => {
     if (!selectedApplication) {
       setMutationError("Select an application first.")
       return
@@ -208,52 +217,40 @@ export function WhiteLabelerApplicationsAdminSection() {
     }
   }
 
+  const handleDecision = handleReview
+
   const pendingCount = applications.filter((application) => application.status === "pending_review").length
 
   return (
-    <section className="min-h-screen bg-slate-50 px-4 py-10 text-slate-950 sm:px-6 dark:bg-slate-950 dark:text-slate-50">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2">
-              <Badge className="bg-slate-900 text-white hover:bg-slate-900 dark:bg-white dark:text-slate-950">Platform Admin</Badge>
-              <div>
-                <h1 className="flex items-center gap-3 text-3xl font-semibold tracking-tight">
-                  <ClipboardList className="h-8 w-8" />
-                  Partner applications
-                </h1>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                  Review inbound white-label applications and provision workspaces only after approval.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button asChild variant="outline">
-                <Link href="/white-labeler/admin">Back to tenant admin</Link>
-              </Button>
-              <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing} className="gap-2">
-                <RefreshCcw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
-                {isRefreshing ? "Refreshing..." : "Refresh"}
-              </Button>
-              <Button variant="outline" onClick={handleSignOut} disabled={isSigningOut} className="gap-2">
-                <LogOut className="h-4 w-4" />
-                {isSigningOut ? "Signing out..." : "Sign out"}
-              </Button>
-            </div>
-          </div>
-        </header>
+    <EmbeddedPortalShell className="max-w-6xl">
+      <PortalHero
+        eyebrow="Platform Admin"
+        initials="PA"
+        title={<span className="inline-flex items-center gap-3"><ClipboardList className="size-7" />Partner applications</span>}
+        description="Review inbound white-label applications, keep queue visibility high, and only provision workspaces after approval. The review and invite logic is unchanged."
+        status={<Chip size="sm" variant="soft" color="warning">{pendingCount} pending review</Chip>}
+      />
 
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:flex-1">
           {(["pending_review", "approved", "invited", "rejected", "all"] as FilterValue[]).map((value) => (
-            <Button
+            <PortalActionButton
               key={value}
-              variant={filter === value ? "default" : "outline"}
-              onClick={() => setFilter(value)}
+              variant={filter === value ? "primary" : "outline"}
+              onPress={() => setFilter(value)}
               className="justify-start"
             >
               {value === "all" ? "All applications" : value.replace(/_/g, " ")}
-            </Button>
+            </PortalActionButton>
           ))}
+        </div>
+          <SearchField.Root aria-label="Search applications" className="w-full xl:max-w-sm" value={searchQuery} onChange={setSearchQuery}>
+            <SearchField.Group>
+              <SearchField.SearchIcon />
+              <SearchField.Input placeholder="Search company, slug, or contact" />
+              <SearchField.ClearButton aria-label="Clear search" />
+            </SearchField.Group>
+          </SearchField.Root>
         </div>
 
         {mutationSuccess ? (
@@ -274,14 +271,11 @@ export function WhiteLabelerApplicationsAdminSection() {
         ) : null}
 
         <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <Card className="border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900">
-            <CardHeader>
-              <CardTitle>Application queue</CardTitle>
-              <CardDescription>
+          <PortalSurfaceCard title="Application queue" description={
+                <>
                 {pendingCount} pending applications in the current view.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+                </>
+              }>
               {loading ? (
                 <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                   <Spinner />
@@ -289,8 +283,10 @@ export function WhiteLabelerApplicationsAdminSection() {
                 </div>
               ) : error ? (
                 <p className="text-sm text-red-600 dark:text-red-300">{error}</p>
-              ) : applications.length === 0 ? (
-                <p className="text-sm text-slate-600 dark:text-slate-300">No applications found for this filter.</p>
+              ) : filteredApplications.length === 0 ? (
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  {applications.length === 0 ? "No applications found for this filter." : "No applications match the current search."}
+                </p>
               ) : (
                 <Table>
                   <TableHeader>
@@ -302,7 +298,7 @@ export function WhiteLabelerApplicationsAdminSection() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {applications.map((application) => (
+                    {filteredApplications.map((application) => (
                       <TableRow
                         key={application.id}
                         className={cn(
@@ -320,15 +316,19 @@ export function WhiteLabelerApplicationsAdminSection() {
                           <div className="text-xs text-slate-500 dark:text-slate-400">{application.contact_email}</div>
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            variant={
+                          <Chip
+                            size="sm"
+                            variant="soft"
+                            color={
                               application.status === "approved" || application.status === "invited"
-                                ? "secondary"
-                                : "outline"
+                                ? "success"
+                                : application.status === "rejected"
+                                  ? "danger"
+                                  : "warning"
                             }
                           >
                             {application.status.replace(/_/g, " ")}
-                          </Badge>
+                          </Chip>
                         </TableCell>
                         <TableCell>{formatDateTime(application.created_at)}</TableCell>
                       </TableRow>
@@ -336,17 +336,9 @@ export function WhiteLabelerApplicationsAdminSection() {
                   </TableBody>
                 </Table>
               )}
-            </CardContent>
-          </Card>
+          </PortalSurfaceCard>
 
-          <Card className="border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900">
-            <CardHeader>
-              <CardTitle>Review workspace application</CardTitle>
-              <CardDescription>
-                Approve to create the reseller organization and owner account.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          <PortalSurfaceCard title="Review workspace application" description="Approve to create the reseller organization and owner account.">
               {!selectedApplication ? (
                 <p className="text-sm text-slate-600 dark:text-slate-300">Select an application to review its details.</p>
               ) : (
@@ -357,6 +349,11 @@ export function WhiteLabelerApplicationsAdminSection() {
                     <p className="text-sm text-slate-600 dark:text-slate-300">Website: {selectedApplication.company_website || "-"}</p>
                     <p className="text-sm text-slate-600 dark:text-slate-300">Referred by: {selectedApplication.referred_by || "-"}</p>
                     <p className="text-sm text-slate-600 dark:text-slate-300">Submitted: {formatDateTime(selectedApplication.created_at)}</p>
+                    <div className="pt-2">
+                      <Chip size="sm" variant="soft" color={selectedApplication.status === "approved" || selectedApplication.status === "invited" ? "success" : selectedApplication.status === "rejected" ? "danger" : "warning"}>
+                        {selectedApplication.status.replace(/_/g, " ")}
+                      </Chip>
+                    </div>
                   </div>
 
                   <div className="rounded-lg border border-slate-200 p-3 text-sm text-slate-700 dark:border-white/10 dark:text-slate-200">
@@ -445,10 +442,8 @@ export function WhiteLabelerApplicationsAdminSection() {
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
+          </PortalSurfaceCard>
         </div>
-      </div>
-    </section>
+    </EmbeddedPortalShell>
   )
 }

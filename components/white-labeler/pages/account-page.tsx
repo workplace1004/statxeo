@@ -1,13 +1,13 @@
 "use client"
 
 import { AlertCircle } from "lucide-react"
+import { Chip } from "@heroui/react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { PortalErrorState, PortalHero, PortalLoadingState, PortalStatCard, PortalSurfaceCard } from "@/components/portal/portal-primitives"
 import { Progress } from "@/components/ui/progress"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useWhiteLabelerPortal } from "@/components/white-labeler/portal-context"
 import { formatDateTime } from "@/components/white-labeler/portal-utils"
@@ -28,25 +28,20 @@ export function WhiteLabelerAccountPage() {
   } = useWhiteLabelerPortal()
 
   if (overviewLoading && !overview) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-40 w-full rounded-xl" />
-        <Skeleton className="h-64 w-full rounded-xl" />
-      </div>
-    )
+    return <PortalLoadingState label="Loading account workspace..." />
   }
 
   if (overviewError) {
     return (
-      <Alert variant="destructive">
-        <AlertTitle>Couldn&apos;t load account</AlertTitle>
-        <AlertDescription className="flex gap-2">
-          {overviewError}
+      <PortalErrorState
+        title="Couldn't load account"
+        message={overviewError}
+        action={
           <Button type="button" size="sm" variant="outline" onClick={() => void loadOverview()}>
             Retry
           </Button>
-        </AlertDescription>
-      </Alert>
+        }
+      />
     )
   }
 
@@ -54,20 +49,32 @@ export function WhiteLabelerAccountPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-muted-foreground text-sm font-medium uppercase tracking-wider">Settings</p>
-        <h2 className="mt-1 text-2xl font-semibold tracking-tight">Account</h2>
-        <p className="text-muted-foreground mt-1 max-w-2xl text-sm">
-          Identity, Stripe Connect, and go-live requirements for your white-label workspace.
-        </p>
+      <PortalHero
+        eyebrow="Settings Workspace"
+        initials="AC"
+        title="Account"
+        description="Identity, Stripe Connect, and go-live requirements for your white-label workspace."
+        status={
+          <>
+            <Chip size="sm" variant="soft" color={overview.onboarding.isComplete ? "success" : "warning"}>
+              {overview.onboarding.isComplete ? "Onboarding complete" : "Setup in progress"}
+            </Chip>
+            <Chip size="sm" variant="soft" color={overview.stripe.status === "active" ? "success" : "default"}>
+              Stripe {overview.stripe.status.replace(/_/g, " ")}
+            </Chip>
+          </>
+        }
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <PortalStatCard label="Role" value={overview.account.role} meta="Workspace permission scope" />
+        <PortalStatCard label="Account status" value={overview.account.status ?? "active"} meta="Current partner workspace status" />
+        <PortalStatCard label="Currency" value={accountCurrency.toUpperCase()} meta="Settlement and reporting currency" />
+        <PortalStatCard label="Settlement month" value={overview.period.settlementMonth} meta="Reporting window for payouts" />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Workspace profile</CardTitle>
-          <CardDescription>How STATXEO recognizes this partner account.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2">
+      <PortalSurfaceCard title="Workspace profile" description="How STATXEO recognizes this partner account.">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-lg border border-border/60 p-3 text-sm">
             <p className="text-muted-foreground">Display name</p>
             <p className="font-medium">{overview.account.displayName || "—"}</p>
@@ -84,19 +91,15 @@ export function WhiteLabelerAccountPage() {
             <p className="text-muted-foreground">Currency</p>
             <p className="font-medium uppercase">{accountCurrency}</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </PortalSurfaceCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Settlement</CardTitle>
-          <CardDescription>Reporting period for payouts and statements.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-3 text-sm">
+      <PortalSurfaceCard title="Settlement" description="Reporting period for payouts and statements.">
+        <div className="flex flex-wrap gap-3 text-sm">
           <Badge variant="secondary">Settlement month: {overview.period.settlementMonth}</Badge>
           <span className="text-muted-foreground">Revenue and payouts use this period for reporting.</span>
-        </CardContent>
-      </Card>
+        </div>
+      </PortalSurfaceCard>
 
       {overview.launchReadiness && !overview.launchReadiness.canSell ? (
         <Alert variant="destructive">
@@ -112,15 +115,12 @@ export function WhiteLabelerAccountPage() {
         </Alert>
       ) : null}
 
-      <Card className="border-border/70 bg-card/80">
-        <CardHeader className="space-y-3">
+      <PortalSurfaceCard
+        title="Stripe Connect"
+        description="Connect an Express account so destination charges and payouts can go live."
+      >
+        <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <CardTitle className="text-xl">Stripe Connect</CardTitle>
-              <CardDescription>
-                Connect an Express account so destination charges and payouts can go live.
-              </CardDescription>
-            </div>
             <Badge variant={overview.stripe.status === "active" ? "secondary" : "outline"}>
               {overview.stripe.status.replace(/_/g, " ")}
             </Badge>
@@ -164,8 +164,6 @@ export function WhiteLabelerAccountPage() {
             </Tooltip>
             {overview.stripe.accountId ? <Badge variant="outline">{overview.stripe.accountId}</Badge> : null}
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
           {!overview.stripe.isConfigured ? (
             <p className="text-destructive text-sm">
               Stripe env vars are missing on this deployment. Add the secret key before onboarding partners.
@@ -227,30 +225,25 @@ export function WhiteLabelerAccountPage() {
             ) : null}
           </div>
           {stripeMutationError ? <p className="text-destructive text-sm">{stripeMutationError}</p> : null}
-        </CardContent>
-      </Card>
+        </div>
+      </PortalSurfaceCard>
 
-      <Card className="border-border/70 bg-card/80">
-        <CardHeader className="space-y-2">
+      <PortalSurfaceCard
+        title="Onboarding progress"
+        description={`Current step: ${
+          overview.onboarding.currentStep === "completed"
+            ? "Completed"
+            : overview.onboarding.steps.find((step) => step.key === overview.onboarding.currentStep)?.label ?? "In progress"
+        }`}
+      >
+        <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <CardTitle className="text-xl">Onboarding progress</CardTitle>
-              <CardDescription>
-                Current step:{" "}
-                {overview.onboarding.currentStep === "completed"
-                  ? "Completed"
-                  : overview.onboarding.steps.find((step) => step.key === overview.onboarding.currentStep)?.label ??
-                    "In progress"}
-              </CardDescription>
-            </div>
             <Badge variant={overview.onboarding.isComplete ? "secondary" : "outline"}>
               {overview.onboarding.completedSteps}/{overview.onboarding.totalSteps} complete
             </Badge>
           </div>
           <Progress value={overview.onboarding.percentComplete} className="h-2.5" />
           <p className="text-muted-foreground text-right text-xs">{overview.onboarding.percentComplete}% complete</p>
-        </CardHeader>
-        <CardContent>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {overview.onboarding.steps.map((step) => (
               <div
@@ -270,18 +263,20 @@ export function WhiteLabelerAccountPage() {
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </PortalSurfaceCard>
 
-      <Card className="border-destructive/30">
-        <CardHeader>
-          <CardTitle className="text-destructive flex items-center gap-2 text-lg">
+      <PortalSurfaceCard
+        title={
+          <span className="text-rose-700 dark:text-rose-300 flex items-center gap-2 text-lg">
             <AlertCircle className="size-5" />
             Danger zone
-          </CardTitle>
-          <CardDescription>Stripe actions can affect live money movement.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-3">
+          </span>
+        }
+        description="Stripe actions can affect live money movement."
+        className="border-rose-200/80 dark:border-rose-400/20"
+      >
+        <div className="flex flex-wrap gap-3">
           <Button
             type="button"
             variant="outline"
@@ -290,8 +285,8 @@ export function WhiteLabelerAccountPage() {
           >
             Restart Stripe onboarding
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </PortalSurfaceCard>
     </div>
   )
 }

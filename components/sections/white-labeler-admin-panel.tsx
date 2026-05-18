@@ -3,8 +3,19 @@
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ClipboardList, LogOut, RefreshCcw, Rocket, ShieldCheck, Sparkles, Users2, Wallet } from "lucide-react"
+import { ClipboardList, Rocket, ShieldCheck, Sparkles, Users2, Wallet } from "lucide-react"
+import { Chip } from "@heroui/react"
 
+import { PortalDataTable } from "@/components/portal/portal-data-table"
+import {
+  EmbeddedPortalShell,
+  PortalActionButton,
+  PortalErrorState,
+  PortalHero,
+  PortalLoadingState,
+  PortalStatCard,
+  PortalSurfaceCard,
+} from "@/components/portal/portal-primitives"
 import DepthCard from "@/components/react-bits/depth-card"
 import StaggeredText from "@/components/react-bits/staggered-text"
 import { Badge } from "@/components/ui/badge"
@@ -13,7 +24,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { createBrowserSupabaseClient } from "@/lib/supabase/client"
 import {
   WhiteLabelerApiError,
@@ -80,9 +90,6 @@ function formatCents(value: number, currency = "usd") {
 export function WhiteLabelerAdminPanelSection({ role }: WhiteLabelerAdminPanelSectionProps) {
   const router = useRouter()
 
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [isSigningOut, setIsSigningOut] = useState(false)
-
   const [dashboardLoading, setDashboardLoading] = useState(true)
   const [dashboardError, setDashboardError] = useState("")
 
@@ -111,7 +118,11 @@ export function WhiteLabelerAdminPanelSection({ role }: WhiteLabelerAdminPanelSe
   const [seedMutationError, setSeedMutationError] = useState("")
   const [seedMutationSuccess, setSeedMutationSuccess] = useState("")
   const [seedResult, setSeedResult] = useState<SeedDemoWhiteLabelerResponse["seed"] | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [isSeedingDemo, setIsSeedingDemo] = useState(false)
+  const [clientSearch, setClientSearch] = useState("")
+  const [pricingSearch, setPricingSearch] = useState("")
+  const [seedRunSearch, setSeedRunSearch] = useState("")
 
   const loadDashboard = useCallback(async () => {
     setDashboardLoading(true)
@@ -197,22 +208,9 @@ export function WhiteLabelerAdminPanelSection({ role }: WhiteLabelerAdminPanelSe
     }
   }
 
-  const handleSignOut = async () => {
-    setIsSigningOut(true)
-
-    try {
-      const supabase = createBrowserSupabaseClient()
-      await supabase.auth.signOut()
-      router.replace("/white-labeler/login")
-      router.refresh()
-    } finally {
-      setIsSigningOut(false)
-    }
-  }
-
   const handleSeedDemo = async () => {
     const displayName = seedForm.displayName.trim()
-    const ownerEmail = seedForm.ownerEmail.trim().toLowerCase()
+    const ownerEmail = seedForm.ownerEmail.trim()
 
     if (!displayName) {
       setSeedMutationError("Display name is required.")
@@ -249,82 +247,49 @@ export function WhiteLabelerAdminPanelSection({ role }: WhiteLabelerAdminPanelSe
   }
 
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_right,_rgba(15,118,110,0.2),_transparent_48%),radial-gradient(circle_at_bottom_left,_rgba(202,138,4,0.12),_transparent_44%),linear-gradient(180deg,#f8fafc_0%,#ecfeff_100%)] px-4 py-10 text-slate-950 sm:px-6 dark:bg-[radial-gradient(circle_at_top_right,_rgba(20,184,166,0.18),_transparent_50%),radial-gradient(circle_at_bottom_left,_rgba(202,138,4,0.16),_transparent_46%),linear-gradient(180deg,#020617_0%,#0f172a_100%)] dark:text-slate-50">
+    <EmbeddedPortalShell className="relative max-w-6xl overflow-hidden rounded-[20px] border border-white/8 bg-[radial-gradient(circle_at_top_right,_rgba(15,118,110,0.10),_transparent_48%),radial-gradient(circle_at_bottom_left,_rgba(202,138,4,0.08),_transparent_44%)]">
       <div className="pointer-events-none absolute inset-0 opacity-60">
         <div className="absolute -top-20 left-8 h-56 w-56 rounded-full bg-teal-300/25 blur-3xl dark:bg-teal-400/20" />
         <div className="absolute bottom-0 right-0 h-64 w-64 rounded-full bg-amber-300/20 blur-3xl dark:bg-amber-400/20" />
       </div>
 
-      <div className="relative mx-auto max-w-7xl space-y-6">
-        <header className="rounded-2xl border border-white/70 bg-white/70 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.12)] backdrop-blur dark:border-white/10 dark:bg-slate-950/65 dark:shadow-[0_30px_95px_rgba(2,6,23,0.6)]">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-3">
-              <Badge className="bg-teal-600/90 text-white hover:bg-teal-600">Admin Workspace</Badge>
-              <div className="space-y-2">
-                <StaggeredText
-                  text="White-Label Command Console"
-                  as="h1"
-                  className="text-3xl font-semibold tracking-tight sm:text-4xl"
-                  segmentBy="words"
-                  delay={45}
-                  duration={0.38}
-                  direction="top"
-                />
-                <p className="max-w-3xl text-sm text-slate-600 dark:text-slate-300">
-                  Role-safeguarded operations for owner/admin workflows, plus platform-level demo seeding for staging and
-                  production-ready preview environments.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button asChild variant="outline">
-                <Link href="/white-labeler">Open tenant portal</Link>
-              </Button>
+      <div className="relative space-y-6">
+        <PortalHero
+          eyebrow="Admin Workspace"
+          initials="WA"
+          title={
+            <StaggeredText
+              text="White-Label Command Console"
+              as="span"
+              className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl dark:text-white"
+              segmentBy="words"
+              delay={45}
+              duration={0.38}
+              direction="top"
+            />
+          }
+          description="Role-safeguarded operations for owner/admin workflows, plus platform-level demo seeding for staging and production-ready preview environments."
+          status={<Chip size="sm" variant="soft" color="accent">{role}</Chip>}
+          actions={
+            <>
+              <PortalActionButton variant="outline" onPress={() => router.push("/white-labeler")}>
+                Open tenant portal
+              </PortalActionButton>
               {seedAccess?.actor_user_id ? (
-                <Button asChild variant="outline" className="gap-2">
-                  <Link href="/white-labeler/admin/applications">
-                    <ClipboardList className="h-4 w-4" />
-                    Partner applications
-                  </Link>
-                </Button>
+                <PortalActionButton variant="outline" onPress={() => router.push("/white-labeler/admin/applications")}>
+                  <ClipboardList className="size-4" />
+                  Partner applications
+                </PortalActionButton>
               ) : null}
-              <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing} className="gap-2">
-                <RefreshCcw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
-                {isRefreshing ? "Refreshing..." : "Refresh"}
-              </Button>
-              <Button variant="outline" onClick={handleSignOut} disabled={isSigningOut} className="gap-2">
-                <LogOut className="h-4 w-4" />
-                {isSigningOut ? "Signing out..." : "Sign out"}
-              </Button>
-            </div>
-          </div>
-        </header>
+            </>
+          }
+        />
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-white/70 bg-white/75 backdrop-blur dark:border-white/10 dark:bg-slate-950/65">
-            <CardHeader className="pb-2">
-              <CardDescription>Access role</CardDescription>
-              <CardTitle className="text-2xl capitalize">{role}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card className="border-white/70 bg-white/75 backdrop-blur dark:border-white/10 dark:bg-slate-950/65">
-            <CardHeader className="pb-2">
-              <CardDescription>Active team members</CardDescription>
-              <CardTitle className="text-2xl">{activeTeamMembers}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card className="border-white/70 bg-white/75 backdrop-blur dark:border-white/10 dark:bg-slate-950/65">
-            <CardHeader className="pb-2">
-              <CardDescription>Active price overrides</CardDescription>
-              <CardTitle className="text-2xl">{activePricingOverrides}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card className="border-white/70 bg-white/75 backdrop-blur dark:border-white/10 dark:bg-slate-950/65">
-            <CardHeader className="pb-2">
-              <CardDescription>Draft payout batches</CardDescription>
-              <CardTitle className="text-2xl">{activePayoutDrafts}</CardTitle>
-            </CardHeader>
-          </Card>
+          <PortalStatCard label="Access role" value={role} meta="Tenant admin scope" />
+          <PortalStatCard label="Active team members" value={String(activeTeamMembers)} meta="Enabled collaborators" />
+          <PortalStatCard label="Active price overrides" value={String(activePricingOverrides)} meta="Monetization rules in force" />
+          <PortalStatCard label="Draft payout batches" value={String(activePayoutDrafts)} meta="Unfinalized settlements" />
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
@@ -386,18 +351,8 @@ export function WhiteLabelerAdminPanelSection({ role }: WhiteLabelerAdminPanelSe
           </DepthCard>
         </div>
 
-        {dashboardLoading ? (
-          <Card className="border-white/70 bg-white/75 backdrop-blur dark:border-white/10 dark:bg-slate-950/65">
-            <CardContent className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
-              <Spinner />
-              Loading admin dashboard...
-            </CardContent>
-          </Card>
-        ) : dashboardError ? (
-          <Card className="border-destructive/40 bg-card/80 backdrop-blur">
-            <CardContent className="py-6 text-sm text-destructive">{dashboardError}</CardContent>
-          </Card>
-        ) : null}
+        {dashboardLoading ? <PortalLoadingState label="Loading admin dashboard..." /> : null}
+        {dashboardError ? <PortalErrorState title="Admin dashboard unavailable" message={dashboardError} /> : null}
 
         <div className="grid gap-6 lg:grid-cols-5">
           <Card className="neo-surface border-white/70 bg-white/80 shadow-[0_24px_70px_rgba(15,23,42,0.12)] backdrop-blur lg:col-span-3 dark:border-white/10 dark:bg-slate-950/68">
@@ -551,12 +506,8 @@ export function WhiteLabelerAdminPanelSection({ role }: WhiteLabelerAdminPanelSe
             </CardContent>
           </Card>
 
-          <Card className="border-white/70 bg-white/80 shadow-[0_24px_70px_rgba(15,23,42,0.12)] backdrop-blur lg:col-span-2 dark:border-white/10 dark:bg-slate-950/68">
-            <CardHeader>
-              <CardTitle>Live Snapshot</CardTitle>
-              <CardDescription>Recent payout batches and team roles from this tenant.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <PortalSurfaceCard title="Live Snapshot" description="Recent payout batches and team roles from this tenant." className="lg:col-span-2 border-white/70 bg-white/80 shadow-[0_24px_70px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-slate-950/68">
+            <div className="space-y-4">
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Recent payouts</p>
                 {payouts.length === 0 ? (
@@ -596,122 +547,74 @@ export function WhiteLabelerAdminPanelSection({ role }: WhiteLabelerAdminPanelSe
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </PortalSurfaceCard>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="border-white/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/68">
-            <CardHeader>
-              <CardTitle>Pricing Overrides</CardTitle>
-              <CardDescription>Current plan pricing and net payout profiles.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {pricing.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No pricing overrides configured.</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Plan</TableHead>
-                      <TableHead>Sold</TableHead>
-                      <TableHead>Net</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pricing.slice(0, 6).map((row) => (
-                      <TableRow key={row.id}>
-                        <TableCell>{row.plan_code}</TableCell>
-                        <TableCell>{formatCents(row.amount_sold_cents, row.currency)}</TableCell>
-                        <TableCell>{formatCents(row.net_payout_cents, row.currency)}</TableCell>
-                        <TableCell>{row.is_active ? "Active" : "Inactive"}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+          <PortalDataTable
+            title="Pricing Overrides"
+            description="Current plan pricing and net payout profiles."
+            rows={pricing.slice(0, 12)}
+            getRowId={(row) => row.id}
+            columns={[
+              { key: "plan", label: "Plan", sortable: true, sortValue: (row) => row.plan_code, render: (row) => row.plan_code },
+              { key: "sold", label: "Sold", sortable: true, sortValue: (row) => row.amount_sold_cents, render: (row) => formatCents(row.amount_sold_cents, row.currency) },
+              { key: "net", label: "Net", sortable: true, sortValue: (row) => row.net_payout_cents, render: (row) => formatCents(row.net_payout_cents, row.currency) },
+              { key: "status", label: "Status", sortable: true, sortValue: (row) => row.is_active ? 1 : 0, render: (row) => row.is_active ? "Active" : "Inactive" },
+            ]}
+            searchPlaceholder="Search plans"
+            searchValue={pricingSearch}
+            onSearchValueChange={setPricingSearch}
+            searchMatcher={(row, query) => [row.plan_code, row.currency].filter(Boolean).some((value) => String(value).toLowerCase().includes(query))}
+            emptyTitle="No pricing overrides configured"
+            emptyDescription="Plan pricing overrides will appear here once configured."
+          />
 
-          <Card className="border-white/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/68">
-            <CardHeader>
-              <CardTitle>Client Roster</CardTitle>
-              <CardDescription>Recently created client accounts for this tenant.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {clients.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No clients found.</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Sites</TableHead>
-                      <TableHead>Created</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {clients.slice(0, 6).map((row) => (
-                      <TableRow key={row.id}>
-                        <TableCell>{row.client_name}</TableCell>
-                        <TableCell className="capitalize">{row.status}</TableCell>
-                        <TableCell>{row.active_site_count}</TableCell>
-                        <TableCell>{formatDate(row.created_at)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+          <PortalDataTable
+            title="Client Roster"
+            description="Recently created client accounts for this tenant."
+            rows={clients.slice(0, 16)}
+            getRowId={(row) => row.id}
+            columns={[
+              { key: "client", label: "Client", sortable: true, sortValue: (row) => row.client_name, render: (row) => row.client_name },
+              { key: "status", label: "Status", sortable: true, sortValue: (row) => row.status, render: (row) => <span className="capitalize">{row.status}</span> },
+              { key: "sites", label: "Sites", sortable: true, sortValue: (row) => row.active_site_count, render: (row) => row.active_site_count },
+              { key: "created", label: "Created", sortable: true, sortValue: (row) => row.created_at, render: (row) => formatDate(row.created_at) },
+            ]}
+            searchPlaceholder="Search clients"
+            searchValue={clientSearch}
+            onSearchValueChange={setClientSearch}
+            searchMatcher={(row, query) => [row.client_name, row.status].filter(Boolean).some((value) => String(value).toLowerCase().includes(query))}
+            emptyTitle="No clients found"
+            emptyDescription="Client accounts will appear here after they are provisioned."
+          />
         </div>
 
-        <Card className="border-white/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/68">
-          <CardHeader>
-            <CardTitle>Demo Seed Run History</CardTitle>
-            <CardDescription>Audit-backed history of recent demo seed operations.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {seedRunsLoading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Spinner />
-                Loading seed run history...
-              </div>
-            ) : seedRunsError ? (
-              <p className="text-sm text-destructive">{seedRunsError}</p>
-            ) : seedRuns.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No seed runs recorded yet.</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Timestamp</TableHead>
-                    <TableHead>Slug</TableHead>
-                    <TableHead>Created account</TableHead>
-                    <TableHead>Clients</TableHead>
-                    <TableHead>Charges</TableHead>
-                    <TableHead>Payout batch</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {seedRuns.map((run) => (
-                    <TableRow key={run.id}>
-                      <TableCell>{formatDate(run.created_at)}</TableCell>
-                      <TableCell>{run.slug || "-"}</TableCell>
-                      <TableCell>{run.created_white_labeler ? "Yes" : "Reused"}</TableCell>
-                      <TableCell>{run.inserted_sample_clients}</TableCell>
-                      <TableCell>{run.inserted_sample_charges}</TableCell>
-                      <TableCell>{run.created_payout_batch ? "Created" : "Reused"}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        <PortalDataTable
+          title="Demo Seed Run History"
+          description="Audit-backed history of recent demo seed operations."
+          rows={seedRuns}
+          getRowId={(row) => row.id}
+          columns={[
+            { key: "timestamp", label: "Timestamp", sortable: true, sortValue: (row) => row.created_at, render: (row) => formatDate(row.created_at) },
+            { key: "slug", label: "Slug", sortable: true, sortValue: (row) => row.slug, render: (row) => row.slug || "-" },
+            { key: "account", label: "Created account", sortable: true, sortValue: (row) => row.created_white_labeler ? 1 : 0, render: (row) => row.created_white_labeler ? "Yes" : "Reused" },
+            { key: "clients", label: "Clients", sortable: true, sortValue: (row) => row.inserted_sample_clients, render: (row) => row.inserted_sample_clients },
+            { key: "charges", label: "Charges", sortable: true, sortValue: (row) => row.inserted_sample_charges, render: (row) => row.inserted_sample_charges },
+            { key: "payout", label: "Payout batch", sortable: true, sortValue: (row) => row.created_payout_batch ? 1 : 0, render: (row) => row.created_payout_batch ? "Created" : "Reused" },
+          ]}
+          loading={seedRunsLoading}
+          loadingLabel="Loading seed run history..."
+          error={seedRunsError}
+          searchPlaceholder="Search seed runs"
+          searchValue={seedRunSearch}
+          onSearchValueChange={setSeedRunSearch}
+          searchMatcher={(row, query) => [row.slug, row.id].filter(Boolean).some((value) => String(value).toLowerCase().includes(query))}
+          emptyTitle="No seed runs recorded yet"
+          emptyDescription="Demo seed activity will appear here once the first run completes."
+        />
       </div>
-    </section>
+    </EmbeddedPortalShell>
   )
 }

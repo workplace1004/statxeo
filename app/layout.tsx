@@ -1,11 +1,29 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
-const _inter = Inter({ subsets: ["latin"] });
-const _jetbrainsMono = JetBrains_Mono({ subsets: ["latin"] });
+const themeBootScript = `(() => {
+  try {
+    const storageKey = 'statxeo-theme';
+    const fallbackTheme = 'glass-light';
+    const root = document.documentElement;
+    const storedTheme = localStorage.getItem(storageKey);
+    const theme = storedTheme === 'glass-light' || storedTheme === 'glass-dark'
+      ? storedTheme
+      : fallbackTheme;
+
+    root.dataset.theme = theme;
+    root.classList.remove('dark', 'glass-dark', 'glass-light');
+
+    if (theme === 'glass-dark') {
+      root.classList.add('dark', 'glass-dark');
+      return;
+    }
+
+    root.classList.add('glass-light');
+  } catch {}
+})();`
 
 function getMetadataBase() {
   const fallback = 'https://statxeo.com'
@@ -81,8 +99,8 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#09090b',
-  colorScheme: 'dark',
+  themeColor: '#f8fafc',
+  colorScheme: 'light',
 }
 
 export default function RootLayout({
@@ -91,9 +109,15 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" className="glass-light bg-background text-foreground" data-theme="glass-light" data-scroll-behavior="smooth" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet" />
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
       <body className="font-sans antialiased bg-background text-foreground">
-        <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
+        <ThemeProvider attribute="data-theme" defaultTheme="glass-light" enableSystem={false} storageKey="statxeo-theme" themes={["glass-dark", "glass-light"]}>
           {children}
         </ThemeProvider>
         <Analytics />

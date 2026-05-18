@@ -1,20 +1,18 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Plus } from "lucide-react"
+import { DollarSign, Plus } from "lucide-react"
+import { Chip } from "@heroui/react"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PortalActionButton, PortalEmptyState, PortalHero, PortalLoadingState, PortalStatCard, PortalSurfaceCard } from "@/components/portal/portal-primitives"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { useWhiteLabelerPortal } from "@/components/white-labeler/portal-context"
 import { formatCents } from "@/components/white-labeler/portal-utils"
 import type { WhiteLabelerPlanOverride } from "@/lib/statxeo/white-labeler-client"
-import { DollarSign } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
@@ -48,106 +46,124 @@ export function WhiteLabelerPricingPage() {
     [pricing, showInactive],
   )
 
+  const activePlans = useMemo(() => pricing.filter((plan) => plan.is_active), [pricing])
+  const averageMargin = useMemo(() => {
+    if (activePlans.length === 0) return "0%"
+    const totalMargin = activePlans.reduce((sum, plan) => sum + marginPercent(plan), 0)
+    return `${Math.round((totalMargin / activePlans.length) * 10) / 10}%`
+  }, [activePlans])
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-muted-foreground text-sm font-medium uppercase tracking-wider">Revenue</p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight">Plan pricing</h2>
-          <p className="text-muted-foreground mt-1 max-w-2xl text-sm">
-            Net payout = amount sold − (base cost + white-label fee). Toggle plans off instead of deleting history.
-          </p>
-        </div>
-        {canManagePricing ? (
-          <Button type="button" className="gap-2" onClick={() => setAddOpen(true)}>
+      <PortalHero
+        eyebrow="Revenue Workspace"
+        initials="PP"
+        title="Plan Pricing"
+        description="Net payout = amount sold − (base cost + white-label fee). Toggle plans off instead of deleting history."
+        status={
+          <Chip size="sm" variant="soft" color={activePlans.length > 0 ? "success" : "warning"}>
+            {activePlans.length > 0 ? `${activePlans.length} active plans` : "No active plans"}
+          </Chip>
+        }
+        actions={canManagePricing ? (
+          <PortalActionButton onPress={() => setAddOpen(true)}>
             <Plus className="size-4" />
             Add plan
-          </Button>
+          </PortalActionButton>
         ) : null}
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <PortalStatCard label="Total plans" value={String(pricing.length)} meta="All pricing overrides" />
+        <PortalStatCard label="Active plans" value={String(activePlans.length)} meta="Sellable checkout configurations" />
+        <PortalStatCard label="Average margin" value={averageMargin} meta="Across active pricing plans" />
+        <PortalStatCard label="Default currency" value={accountCurrency.toUpperCase()} meta="Workspace payout currency" />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Switch id="show-inactive" checked={showInactive} onCheckedChange={setShowInactive} />
-        <Label htmlFor="show-inactive" className="text-sm font-normal">
-          Show inactive plans
-        </Label>
-      </div>
-
-      {pricingLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-44 rounded-xl" />
-          ))}
+      <PortalSurfaceCard title="Plan visibility" description="Use inactive mode to review archived pricing without changing history.">
+        <div className="flex flex-wrap items-center gap-3">
+          <Switch id="show-inactive" checked={showInactive} onCheckedChange={setShowInactive} />
+          <Label htmlFor="show-inactive" className="text-sm font-normal">
+            Show inactive plans
+          </Label>
         </div>
-      ) : pricingError ? (
-        <p className="text-destructive text-sm">{pricingError}</p>
-      ) : visiblePlans.length === 0 ? (
-        <Empty className="border border-border/60 py-12">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <DollarSign />
-            </EmptyMedia>
-            <EmptyTitle>No active plans</EmptyTitle>
-            <EmptyDescription>Add a plan with sold amount, base cost, and fee to define your margin.</EmptyDescription>
-          </EmptyHeader>
-          {canManagePricing ? (
-            <Button type="button" className="mt-4" onClick={() => setAddOpen(true)}>
+      </PortalSurfaceCard>
+
+      {pricingLoading ? <PortalLoadingState label="Loading plan pricing..." /> : null}
+      {!pricingLoading && pricingError ? (
+        <PortalSurfaceCard title="Pricing unavailable">
+          <p className="text-sm text-rose-700 dark:text-rose-300">{pricingError}</p>
+        </PortalSurfaceCard>
+      ) : null}
+
+      {!pricingLoading && !pricingError && visiblePlans.length === 0 ? (
+        <PortalEmptyState
+          title="No active plans"
+          description="Add a plan with sold amount, base cost, and fee to define your margin."
+          action={canManagePricing ? (
+            <PortalActionButton onPress={() => setAddOpen(true)}>
+              <Plus className="size-4" />
               Add plan
-            </Button>
+            </PortalActionButton>
           ) : null}
-        </Empty>
-      ) : (
+        />
+      ) : null}
+
+      {!pricingLoading && !pricingError && visiblePlans.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {visiblePlans.map((row) => (
-            <Card key={row.id} className={cn(!row.is_active && "opacity-80")}>
-              <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-2">
-                <div>
-                  <CardTitle className="font-mono text-base">{row.plan_code}</CardTitle>
-                  <CardDescription className="uppercase">{row.currency}</CardDescription>
+            <PortalSurfaceCard
+              key={row.id}
+              title={<span className="font-mono text-base uppercase tracking-[0.12em]">{row.plan_code}</span>}
+              description={<span className="uppercase">{row.currency}</span>}
+              className={cn(!row.is_active && "opacity-80")}
+            >
+              <div className="space-y-4 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <Chip size="sm" variant="soft" color={row.is_active ? "success" : "default"}>
+                    {row.is_active ? "Active" : "Inactive"}
+                  </Chip>
+                  {canManagePricing ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-500 dark:text-slate-400">{row.is_active ? "Live" : "Disabled"}</span>
+                      <Switch
+                        checked={row.is_active}
+                        onCheckedChange={() => void handleTogglePricingOverrideStatus(row)}
+                        disabled={updatingPricingId === row.id}
+                        aria-label={row.is_active ? "Deactivate plan" : "Activate plan"}
+                      />
+                    </div>
+                  ) : null}
                 </div>
-                {canManagePricing ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground text-xs">{row.is_active ? "Active" : "Inactive"}</span>
-                    <Switch
-                      checked={row.is_active}
-                      onCheckedChange={() => void handleTogglePricingOverrideStatus(row)}
-                      disabled={updatingPricingId === row.id}
-                      aria-label={row.is_active ? "Deactivate plan" : "Activate plan"}
-                    />
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground text-xs">{row.is_active ? "Active" : "Inactive"}</span>
-                )}
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <div className="grid grid-cols-2 gap-2">
+
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <p className="text-muted-foreground text-xs">Sold</p>
-                    <p className="font-semibold tabular-nums">{formatCents(row.amount_sold_cents, row.currency)}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Sold</p>
+                    <p className="font-semibold tabular-nums text-slate-900 dark:text-white">{formatCents(row.amount_sold_cents, row.currency)}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-xs">Net payout</p>
-                    <p className="font-semibold tabular-nums">{formatCents(row.net_payout_cents, row.currency)}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Net payout</p>
+                    <p className="font-semibold tabular-nums text-slate-900 dark:text-white">{formatCents(row.net_payout_cents, row.currency)}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-xs">Margin</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Margin</p>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <p className="font-semibold tabular-nums">{marginPercent(row)}%</p>
+                        <p className="font-semibold tabular-nums text-slate-900 dark:text-white">{marginPercent(row)}%</p>
                       </TooltipTrigger>
                       <TooltipContent>Net ÷ sold × 100</TooltipContent>
                     </Tooltip>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-xs">Fee</p>
-                    <p className="tabular-nums">{formatCents(row.white_label_fee_cents, row.currency)}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Fee</p>
+                    <p className="tabular-nums text-slate-700 dark:text-slate-200">{formatCents(row.white_label_fee_cents, row.currency)}</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </PortalSurfaceCard>
           ))}
         </div>
-      )}
+      ) : null}
 
       <Sheet open={addOpen} onOpenChange={setAddOpen}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-md">

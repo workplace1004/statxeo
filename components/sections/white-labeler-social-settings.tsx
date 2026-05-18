@@ -14,10 +14,9 @@ import {
   AlertCircle,
   Loader2
 } from "lucide-react"
+import { Chip } from "@heroui/react"
+import { PortalActionButton, PortalSurfaceCard } from "@/components/portal/portal-primitives"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 
 const SOCIAL_PROVIDERS = [
@@ -27,6 +26,9 @@ const SOCIAL_PROVIDERS = [
   { id: "linkedin", name: "LinkedIn", icon: Linkedin, color: "bg-[#0A66C2]", description: "Personal & Company" },
   { id: "youtube", name: "YouTube", icon: Youtube, color: "bg-[#FF0000]", description: "Video & Shorts" },
 ]
+
+const PRIMARY_PROVIDER_ROW = SOCIAL_PROVIDERS.slice(0, 3)
+const SECONDARY_PROVIDER_ROW = SOCIAL_PROVIDERS.slice(3)
 
 export function WhiteLabelerSocialSettings() {
   const router = useRouter()
@@ -64,7 +66,7 @@ export function WhiteLabelerSocialSettings() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="w-full space-y-8 animate-in fade-in duration-500">
       {status === "success" ? (
         <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900" aria-live="polite">
           <CheckCircle2 className="h-4 w-4 text-emerald-600" />
@@ -81,36 +83,30 @@ export function WhiteLabelerSocialSettings() {
         </Alert>
       ) : null}
 
-      <div className="flex flex-col gap-2">
-        <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Social Connections</h2>
-        <p className="text-slate-500 dark:text-slate-400">
+      <div className="space-y-2">
+        <h2 className="mt-0 text-3xl font-bold tracking-tight text-[var(--foreground)]">Social Connections</h2>
+        <p className="text-[var(--muted-foreground)]">
           Connect your agency&apos;s social accounts to start publishing content.
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {SOCIAL_PROVIDERS.map((provider) => (
-          <Card key={provider.id} className="group overflow-hidden border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm transition-all hover:shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div className={`p-2.5 rounded-xl ${provider.color} text-white shadow-sm`}>
-                <provider.icon className="h-5 w-5" />
-              </div>
-              <Badge variant="outline" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                Available
-              </Badge>
-            </CardHeader>
-            <CardContent>
+      <div className="space-y-5">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {PRIMARY_PROVIDER_ROW.map((provider) => (
+            <PortalSurfaceCard key={provider.id} title={provider.name} description={provider.description} className="group h-full overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300">
               <div className="space-y-4">
-                <div>
-                  <CardTitle className="text-xl">{provider.name}</CardTitle>
-                  <CardDescription className="mt-1">{provider.description}</CardDescription>
+                <div className="flex items-center justify-between gap-3">
+                  <div className={`glass-icon-tile rounded-[10px] p-2.5 ${provider.color} text-white`}>
+                    <provider.icon className="h-5 w-5" />
+                  </div>
+                  <Chip size="sm" variant="soft" color="default">Available</Chip>
                 </div>
-                
-                <Button 
-                  onClick={() => handleConnect(provider.id)}
-                  disabled={connecting !== null}
-                  className="w-full gap-2 rounded-xl"
-                  variant={connecting === provider.id ? "secondary" : "default"}
+
+                <PortalActionButton
+                  onPress={() => handleConnect(provider.id)}
+                  isDisabled={connecting !== null}
+                  className="w-full justify-center rounded-[10px] border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100 dark:border-white/10 dark:bg-white/6 dark:text-white/92 dark:hover:bg-white/10"
+                  variant="outline"
                 >
                   {connecting === provider.id ? (
                     <>
@@ -123,28 +119,66 @@ export function WhiteLabelerSocialSettings() {
                       Connect {provider.name}
                     </>
                   )}
-                </Button>
+                </PortalActionButton>
               </div>
-            </CardContent>
-          </Card>
-        ))}
+            </PortalSurfaceCard>
+          ))}
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-2 xl:mx-auto xl:max-w-3xl">
+          {SECONDARY_PROVIDER_ROW.map((provider) => (
+            <PortalSurfaceCard key={provider.id} title={provider.name} description={provider.description} className="group h-full overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className={`glass-icon-tile rounded-[10px] p-2.5 ${provider.color} text-white`}>
+                    <provider.icon className="h-5 w-5" />
+                  </div>
+                  <Chip size="sm" variant="soft" color="default">Available</Chip>
+                </div>
+
+                <PortalActionButton
+                  onPress={() => handleConnect(provider.id)}
+                  isDisabled={connecting !== null}
+                  className="w-full justify-center rounded-[10px] border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100 dark:border-white/10 dark:bg-white/6 dark:text-white/92 dark:hover:bg-white/10"
+                  variant="outline"
+                >
+                  {connecting === provider.id ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4" />
+                      Connect {provider.name}
+                    </>
+                  )}
+                </PortalActionButton>
+              </div>
+            </PortalSurfaceCard>
+          ))}
+        </div>
       </div>
 
-      <Card className="border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-full bg-slate-100 dark:bg-slate-800">
-              <Link2 className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Unified Connection Engine</CardTitle>
-              <CardDescription>
-                Connect once, post everywhere. Your tokens are encrypted and managed securely.
-              </CardDescription>
-            </div>
+      <div className="rounded-[14px] border border-slate-200 bg-slate-50/80 px-5 py-4 dark:border-white/10 dark:bg-[var(--surface)]/40">
+        <div className="mb-3 flex items-center gap-2">
+          <div className="rounded-[10px] border border-slate-200 bg-white p-2 shadow-sm dark:glass-icon-tile dark:border-white/10 dark:bg-transparent">
+            <Link2 className="h-5 w-5 text-[var(--muted-foreground)]" />
           </div>
-        </CardHeader>
-      </Card>
+          <div>
+            <h3 className="text-sm font-semibold text-[var(--foreground)]">Unified Connection Engine</h3>
+            <p className="text-sm text-[var(--muted-foreground)]">Connect once, post everywhere. Your tokens are encrypted and managed securely.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="rounded-[10px] border border-slate-200 bg-white p-2 shadow-sm dark:glass-icon-tile dark:border-white/10 dark:bg-transparent">
+            <Link2 className="h-5 w-5 text-[var(--muted-foreground)]" />
+          </div>
+          <p className="text-sm text-[var(--muted-foreground)]">
+            The shared admin shell is now aligned with the broader portal system, so future composer and history work can inherit the same table, modal, and command patterns.
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
