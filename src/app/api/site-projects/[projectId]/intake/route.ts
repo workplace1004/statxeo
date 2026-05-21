@@ -1,0 +1,19 @@
+import type {NextRequest} from "next/server";
+
+import * as service from "@/server/site-projects/service";
+import {readJsonBody} from "@/server/site-projects/request-body";
+import {withSiteProjectsSession} from "@/server/site-projects/route-handler";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function POST(
+  request: NextRequest,
+  {params}: {params: Promise<{projectId: string}>},
+) {
+  const {projectId} = await params;
+  return withSiteProjectsSession(request, async (ctx) => {
+    const body = await readJsonBody(request, {maxBytes: 512 * 1024});
+    return service.saveIntake(ctx, projectId, body);
+  });
+}

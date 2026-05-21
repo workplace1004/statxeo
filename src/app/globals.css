@@ -1,0 +1,8 @@
+@import "@heroui/styles/css";
+@import "@heroui-pro/react/css";
+
+@source "../**/*.{ts,tsx}";
+
+body {
+  background-color: var(--background);
+}

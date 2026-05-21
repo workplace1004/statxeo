@@ -1,0 +1,7 @@
+.shiny-text {
+  display: inline-block;
+}
+
+.shiny-text.hidden {
+  display: none;
+}
