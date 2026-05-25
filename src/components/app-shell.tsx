@@ -62,9 +62,15 @@ export function AppShell({account, children}: AppShellProps) {
       </AppLayout>
       <CommandPalette
         basePath={account.basePath}
+<<<<<<< Updated upstream
         footerItems={account.footerItems}
         isOpen={isPaletteOpen}
         navItems={account.navItems}
+=======
+        footerItems={[...account.footerItems]}
+        isOpen={isPaletteOpen}
+        navItems={[...account.navItems]}
+>>>>>>> Stashed changes
         onClose={() => setIsPaletteOpen(false)}
       />
     </>

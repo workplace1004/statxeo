@@ -55,9 +55,15 @@ function TrainingCard({
   const Icon = item.Icon;
 
   const statusColor =
+<<<<<<< Updated upstream
     item.status === "Complete"
       ? "success"
       : item.status === "In progress"
+=======
+    (item.status as string) === "Complete"
+      ? "success"
+      : (item.status as string) === "In progress"
+>>>>>>> Stashed changes
         ? "accent"
         : undefined;
 
@@ -67,7 +73,11 @@ function TrainingCard({
         "relative flex min-h-[160px] w-full flex-col gap-2 overflow-hidden rounded-xl p-4 text-left transition-colors",
         item.status === "Not started"
           ? "border-default-200 bg-content1 border border-dashed"
+<<<<<<< Updated upstream
           : item.status === "Complete"
+=======
+          : (item.status as string) === "Complete"
+>>>>>>> Stashed changes
             ? "border-success/30 bg-success/5 border"
             : "bg-content2/40",
       ].join(" ")}

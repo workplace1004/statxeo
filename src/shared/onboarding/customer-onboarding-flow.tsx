@@ -198,7 +198,11 @@ export function CustomerOnboardingFlow() {
           <Card.Content>
             <Button
               className="w-full sm:w-auto"
+<<<<<<< Updated upstream
               isLoading={isPending}
+=======
+              isDisabled={isPending}
+>>>>>>> Stashed changes
               onPress={() =>
                 startTransition(() =>
                   completeCustomerOnboarding({
@@ -208,8 +212,16 @@ export function CustomerOnboardingFlow() {
                 )
               }
             >
+<<<<<<< Updated upstream
               Open customer dashboard
               <ArrowRight className="size-4" />
+=======
+              {isPending && (
+                <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              )}
+              Open customer dashboard
+              {!isPending && <ArrowRight className="size-4" />}
+>>>>>>> Stashed changes
             </Button>
           </Card.Content>
         </Card>

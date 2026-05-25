@@ -53,6 +53,11 @@ import type {TrainingModuleDoc, TrainingProgressDoc} from "./schemas/training";
 import type {UserDoc} from "./schemas/users";
 import type {WebsitePageDoc} from "./schemas/website-pages";
 import type {WorkflowDoc} from "./schemas/workflows";
+<<<<<<< Updated upstream
+=======
+import type {CampaignDoc} from "./schemas/campaigns";
+import type {WorkflowExecutionDoc} from "./schemas/workflow-executions";
+>>>>>>> Stashed changes
 
 import {getDb} from "./database";
 
@@ -104,6 +109,11 @@ export const COLLECTION_NAMES = {
   users: "users",
   websitePages: "websitePages",
   workflows: "workflows",
+<<<<<<< Updated upstream
+=======
+  campaigns: "campaigns",
+  workflowExecutions: "workflowExecutions",
+>>>>>>> Stashed changes
 } as const;
 
 export type CollectionName = (typeof COLLECTION_NAMES)[keyof typeof COLLECTION_NAMES];
@@ -162,4 +172,9 @@ export const collections = {
   users: () => coll<UserDoc>(COLLECTION_NAMES.users),
   websitePages: () => coll<WebsitePageDoc>(COLLECTION_NAMES.websitePages),
   workflows: () => coll<WorkflowDoc>(COLLECTION_NAMES.workflows),
+<<<<<<< Updated upstream
+=======
+  campaigns: () => coll<CampaignDoc>(COLLECTION_NAMES.campaigns),
+  workflowExecutions: () => coll<WorkflowExecutionDoc>(COLLECTION_NAMES.workflowExecutions),
+>>>>>>> Stashed changes
 } as const;
