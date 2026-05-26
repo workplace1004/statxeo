@@ -29,7 +29,12 @@
     "verbatimModuleSyntax": true,
     "allowJs": true,
     "paths": {
+<<<<<<< Updated upstream
       "@/*": ["./src/*"]
+=======
+      "@/*": ["./src/*"],
+      "@heroui-pro/react": ["./src/lib/heroui-pro-mock.tsx"]
+>>>>>>> Stashed changes
     }
   },
   "exclude": [

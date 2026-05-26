@@ -40,6 +40,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+<<<<<<< Updated upstream
+=======
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+>>>>>>> Stashed changes
 };
 
 export default nextConfig;

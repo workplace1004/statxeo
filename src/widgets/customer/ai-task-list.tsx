@@ -69,9 +69,14 @@ export function AiTaskList({tasks}: AiTaskListProps) {
                       Dismiss
                     </Button>
                     <Button
+<<<<<<< Updated upstream
                       color="success"
                       size="sm"
                       variant="soft"
+=======
+                      size="sm"
+                      variant="primary"
+>>>>>>> Stashed changes
                       onPress={() => notifySuccess(`Approved "${task.title}"`)}
                     >
                       Approve

@@ -1,0 +1,5 @@
+onlyBuiltDependencies:
+  - '@heroui-pro/react'
+  - esbuild
+  - sharp
+  - unrs-resolver

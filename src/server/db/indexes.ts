@@ -409,6 +409,27 @@ export async function ensureIndexes(): Promise<EnsureIndexesResult> {
     return c.createIndexes([{key: {audience: 1, position: 1}, name: "faqs_audience_position"}]);
   });
 
+<<<<<<< Updated upstream
+=======
+  await safeCreate("campaigns", async () => {
+    const c = await collections.campaigns();
+
+    return c.createIndexes([
+      {key: {whiteLabelerId: 1, status: 1}, name: "campaigns_wl_status"},
+      {key: {clientOrgId: 1}, name: "campaigns_client"},
+    ]);
+  });
+
+  await safeCreate("workflowExecutions", async () => {
+    const c = await collections.workflowExecutions();
+
+    return c.createIndexes([
+      {key: {whiteLabelerId: 1, workflowType: 1}, name: "workflow_wl_type"},
+      {key: {campaignId: 1}, name: "workflow_campaign"},
+    ]);
+  });
+
+>>>>>>> Stashed changes
   const {ensureSiteProjectIndexes} = await import("../site-projects/site-project-indexes");
   const siteProjectIndexResult = await ensureSiteProjectIndexes();
   Object.assign(created, siteProjectIndexResult.created);
