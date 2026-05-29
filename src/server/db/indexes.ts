@@ -409,8 +409,6 @@ export async function ensureIndexes(): Promise<EnsureIndexesResult> {
     return c.createIndexes([{key: {audience: 1, position: 1}, name: "faqs_audience_position"}]);
   });
 
-<<<<<<< Updated upstream
-=======
   await safeCreate("campaigns", async () => {
     const c = await collections.campaigns();
 
@@ -429,7 +427,6 @@ export async function ensureIndexes(): Promise<EnsureIndexesResult> {
     ]);
   });
 
->>>>>>> Stashed changes
   const {ensureSiteProjectIndexes} = await import("../site-projects/site-project-indexes");
   const siteProjectIndexResult = await ensureSiteProjectIndexes();
   Object.assign(created, siteProjectIndexResult.created);

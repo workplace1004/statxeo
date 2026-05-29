@@ -2,7 +2,7 @@ import type {BaseDoc} from "./_helpers";
 import {z} from "zod";
 import {dateToIso, idToString} from "./_helpers";
 
-export const WORKFLOW_TYPES = ["ad_campaign", "seo_generation", "site_generation", "social_schedule"] as const;
+export const WORKFLOW_TYPES = ["ad_campaign", "seo_generation", "site_generation", "social_schedule", "local_seo"] as const;
 export type WorkflowType = (typeof WORKFLOW_TYPES)[number];
 
 export const WORKFLOW_STATUSES = ["queued", "running", "completed", "failed", "cancelled"] as const;
@@ -34,6 +34,9 @@ export interface WorkflowExecutionDoc extends BaseDoc {
   projectId?: string;
   campaignId?: string;
   whiteLabelerId: string;
+  clientOrgId?: string;
+  /** Original client intent prompt — captured at Scene 1 */
+  intent?: string;
   workflowType: WorkflowType;
   status: WorkflowStatus;
   stage: string;
@@ -69,6 +72,8 @@ export interface WorkflowExecution {
   projectId?: string;
   campaignId?: string;
   whiteLabelerId: string;
+  clientOrgId?: string;
+  intent?: string;
   workflowType: WorkflowType;
   status: WorkflowStatus;
   stage: string;
@@ -83,6 +88,8 @@ export const workflowExecutionInputSchema = z.object({
   projectId: z.string().optional(),
   campaignId: z.string().optional(),
   whiteLabelerId: z.string().min(1),
+  clientOrgId: z.string().optional(),
+  intent: z.string().optional(),
   workflowType: z.enum(WORKFLOW_TYPES),
   status: z.enum(WORKFLOW_STATUSES).default("queued"),
   stage: z.string().min(1),
@@ -115,6 +122,8 @@ export function serializeWorkflowExecution(doc: WorkflowExecutionDoc): WorkflowE
     projectId: doc.projectId,
     campaignId: doc.campaignId,
     whiteLabelerId: doc.whiteLabelerId,
+    clientOrgId: doc.clientOrgId,
+    intent: doc.intent,
     workflowType: doc.workflowType,
     status: doc.status,
     stage: doc.stage,

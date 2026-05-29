@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 
-import { createServerSupabaseClient } from "@/lib/supabase/server"
-
 const FORWARD_HEADERS = ["retry-after", "x-ratelimit-remaining", "x-ratelimit-reset"] as const
 const RAW_FORWARD_HEADERS = ["content-type", "content-disposition", "cache-control", ...FORWARD_HEADERS] as const
 
@@ -61,20 +59,6 @@ async function resolveAuthorizationHeader(request: NextRequest): Promise<string 
   const directAuthorization = request.headers.get("authorization") || request.headers.get("Authorization")
   if (directAuthorization) {
     return directAuthorization
-  }
-
-  try {
-    const supabase = await createServerSupabaseClient()
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    const accessToken = session?.access_token?.trim()
-    if (accessToken) {
-      return `Bearer ${accessToken}`
-    }
-  } catch {
-    // Fall through when Supabase session resolution is unavailable.
   }
 
   return null

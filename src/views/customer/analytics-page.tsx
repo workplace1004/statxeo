@@ -69,11 +69,7 @@ export function CustomerAnalyticsPage({
             aria-label="Time range"
             selectedKey={range}
             size="sm"
-<<<<<<< Updated upstream
-            onSelectionChange={(key) => setRange(String(key))}
-=======
             onSelectionChange={(key: any) => setRange(String(key))}
->>>>>>> Stashed changes
           >
             {RANGES.map((r) => (
               <Segment.Item key={r} id={r}>

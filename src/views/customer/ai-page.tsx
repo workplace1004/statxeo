@@ -97,11 +97,7 @@ export function CustomerAiPage({chat, settings, tasks}: CustomerAiPageProps) {
             aria-label="AI assistant sections"
             selectedKey={tab}
             size="sm"
-<<<<<<< Updated upstream
-            onSelectionChange={(key) => {
-=======
             onSelectionChange={(key: any) => {
->>>>>>> Stashed changes
               if (key === "conversation" || key === "autopilot") setTab(key);
             }}
           >

@@ -2,10 +2,7 @@ import {
   ArrowRightFromSquare,
   Briefcase,
   ChartColumn,
-<<<<<<< Updated upstream
-=======
   ChartLine,
->>>>>>> Stashed changes
   CircleQuestion,
   CreditCard,
   Display,
@@ -42,10 +39,7 @@ export const WHITE_LABEL_ACCOUNT: AccountConfig = {
     {href: "/white-label/seo", icon: Magnifier, label: "SEO / XEO"},
     {href: "/white-label/social", icon: Megaphone, label: "Social Engine"},
     {badge: "New", href: "/white-label/automation", icon: Rocket, label: "Automation"},
-<<<<<<< Updated upstream
-=======
     {href: "/white-label/campaigns", icon: ChartLine, label: "Ad Campaigns"},
->>>>>>> Stashed changes
     {href: "/white-label/analytics", icon: ChartColumn, label: "Analytics"},
     {href: "/white-label/billing", icon: CreditCard, label: "Billing"},
     {href: "/white-label/branding", icon: Palette, label: "Branding"},

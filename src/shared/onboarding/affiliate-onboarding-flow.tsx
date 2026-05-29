@@ -146,27 +146,18 @@ export function AffiliateOnboardingFlow() {
           <Card.Content>
             <Button
               className="w-full"
-<<<<<<< Updated upstream
-              isLoading={isPending}
-=======
               isDisabled={isPending}
->>>>>>> Stashed changes
               onPress={() =>
                 startTransition(() =>
                   completeAffiliateOnboarding({fullName, payoutEmail}),
                 )
               }
             >
-<<<<<<< Updated upstream
-              Open affiliate dashboard
-              <ArrowRight className="size-4" />
-=======
               {isPending && (
                 <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
               )}
               Open affiliate dashboard
               {!isPending && <ArrowRight className="size-4" />}
->>>>>>> Stashed changes
             </Button>
           </Card.Content>
         </Card>
