@@ -39,6 +39,9 @@ export interface UserDoc extends BaseDoc {
   role: UserRole;
   accountType: "agency" | "customer" | "affiliate" | "platform";
   organizationId: string | null;
+  metaAdsAccessToken?: string | null;
+  googleAdsRefreshToken?: string | null;
+  googleAdsCustomerId?: string | null;
 }
 
 export interface User {
@@ -50,6 +53,9 @@ export interface User {
   role: UserRole;
   accountType: "agency" | "customer" | "affiliate" | "platform";
   organizationId: string | null;
+  metaAdsAccessToken?: string | null;
+  googleAdsRefreshToken?: string | null;
+  googleAdsCustomerId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -62,6 +68,9 @@ export const userInputSchema = z.object({
   role: z.enum(USER_ROLES),
   accountType: z.enum(["agency", "customer", "affiliate", "platform"]),
   organizationId: z.string().nullable().optional(),
+  metaAdsAccessToken: z.string().nullable().optional(),
+  googleAdsRefreshToken: z.string().nullable().optional(),
+  googleAdsCustomerId: z.string().nullable().optional(),
 });
 export type UserInput = z.infer<typeof userInputSchema>;
 
@@ -75,6 +84,9 @@ export function serializeUser(doc: UserDoc): User {
     role: doc.role,
     accountType: doc.accountType,
     organizationId: doc.organizationId,
+    metaAdsAccessToken: doc.metaAdsAccessToken,
+    googleAdsRefreshToken: doc.googleAdsRefreshToken,
+    googleAdsCustomerId: doc.googleAdsCustomerId,
     createdAt: dateToIso(doc.createdAt),
     updatedAt: dateToIso(doc.updatedAt),
   };

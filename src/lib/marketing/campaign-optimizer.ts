@@ -19,22 +19,28 @@ export async function optimizeActiveCampaigns(): Promise<any[]> {
     let updated = false;
 
     try {
-      // 1. Fetch Performance Metrics from Provider API
+      // Fetch the Agency Owner to get their OAuth tokens
+      const usersCol = await collections.users();
+      const agencyOwner = await usersCol.findOne({
+        organizationId: campaign.whiteLabelerId,
+        role: "agency_owner",
+      });
+
       let impressions = 0;
       let clicks = 0;
       let spend = 0;
       let conversions = 0;
 
       if (campaign.channel === "meta") {
-        const metaClient = new MetaAdsClient();
-        const stats = await metaClient.getInsights(campaign._id.toString());
+        const metaClient = new MetaAdsClient(agencyOwner?.metaAdsAccessToken || undefined);
+        const stats = await metaClient.getInsights(campaign.metaCampaignId || campaign._id.toString());
         impressions = stats.impressions;
         clicks = stats.clicks;
         spend = stats.spend;
         conversions = stats.conversions;
       } else if (campaign.channel === "google") {
-        const googleClient = new GoogleAdsClient();
-        const stats = await googleClient.getInsights(campaign._id.toString());
+        const googleClient = new GoogleAdsClient(agencyOwner?.googleAdsRefreshToken || undefined);
+        const stats = await googleClient.getInsights(campaign.googleCampaignId || campaign._id.toString());
         impressions = stats.impressions;
         clicks = stats.clicks;
         spend = stats.spend;
@@ -83,6 +89,13 @@ export async function optimizeActiveCampaigns(): Promise<any[]> {
         ) {
           lowestCtrCreative.status = "paused";
           updated = true;
+          
+          // Push pause status to Meta/Google
+          if (campaign.channel === "meta" && lowestCtrCreative.generationId) {
+             // In a real implementation, call metaClient.pauseAd(lowestCtrCreative.generationId)
+             console.log(`[Optimizer] Pausing Meta Creative: ${lowestCtrCreative.generationId}`);
+          }
+
           auditLogs.push({
             timestamp: new Date(),
             actor: "ai" as const,

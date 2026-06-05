@@ -1,8 +1,7 @@
 import {timingSafeEqual} from "node:crypto";
 import {NextRequest, NextResponse} from "next/server";
 
-import {getSession} from "@/server/auth/session";
-import {collections} from "@/server/db/collections";
+import {getAuthenticatedWhiteLabeler} from "@/server/api-context";
 import {optimizeActiveCampaigns} from "@/lib/marketing/campaign-optimizer";
 
 export const runtime = "nodejs";
@@ -35,17 +34,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (!isCronAuthorized) {
-      const session = await getSession();
-      if (!session || session.persona !== "white-label") {
-        return NextResponse.json({error: "Unauthorized"}, {status: 401});
-      }
-
-      const users = await collections.users();
-      const user = await users.findOne({email: session.email.toLowerCase()});
-      const agencyOrgId = user?.organizationId;
-      if (!agencyOrgId) {
-        return NextResponse.json({error: "Forbidden: No agency organization found."}, {status: 403});
-      }
+      const auth = await getAuthenticatedWhiteLabeler(request);
+      if (auth.errorResponse) return auth.errorResponse;
+      
+      const {user, session} = auth.ctx!;
 
       // ── AI Safety Guard ────────────────────────────────────────────────────
       // Only roles with modify_billing may trigger budget reallocation.

@@ -7,7 +7,7 @@ export type NavItem = {
   readonly badge?: string;
 };
 
-export type AccountType = "white-label" | "affiliate" | "customer";
+export type AccountType = "white-label" | "affiliate" | "customer" | "platform-admin";
 
 export type AccountIdentity = {
   readonly name: string;

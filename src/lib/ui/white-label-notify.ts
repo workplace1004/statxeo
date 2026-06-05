@@ -7,3 +7,7 @@ export function notifySuccess(message: string): void {
 export function notifyInfo(message: string): void {
   toast.info(message);
 }
+
+export function notifyError(message: string): void {
+  toast(message, {variant: "danger"} as any);
+}

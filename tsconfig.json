@@ -29,8 +29,7 @@
     "verbatimModuleSyntax": true,
     "allowJs": true,
     "paths": {
-      "@/*": ["./src/*"],
-      "@heroui-pro/react": ["./src/lib/heroui-pro-mock.tsx"]
+      "@/*": ["./src/*"]
     }
   },
   "exclude": [

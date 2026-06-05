@@ -1,8 +1,8 @@
 import {NextRequest, NextResponse} from "next/server";
 import {ObjectId} from "mongodb";
 
-import {getSession} from "@/server/auth/session";
 import {collections} from "@/server/db/collections";
+import {getAuthenticatedWhiteLabeler} from "@/server/api-context";
 import {serializeCampaign, campaignInputSchema} from "@/server/db/schemas/campaigns";
 import {serializeWorkflowExecution} from "@/server/db/schemas/workflow-executions";
 
@@ -14,17 +14,9 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session || session.persona !== "white-label") {
-      return NextResponse.json({error: "Unauthorized"}, {status: 401});
-    }
-
-    const users = await collections.users();
-    const user = await users.findOne({email: session.email.toLowerCase()});
-    const agencyOrgId = user?.organizationId;
-    if (!agencyOrgId) {
-      return NextResponse.json({error: "Forbidden: No agency organization found."}, {status: 403});
-    }
+    const auth = await getAuthenticatedWhiteLabeler(request);
+    if (auth.errorResponse) return auth.errorResponse;
+    const {orgId: agencyOrgId} = auth.ctx!;
 
     const {searchParams} = new URL(request.url);
     const clientOrgId = searchParams.get("clientOrgId");
@@ -62,17 +54,9 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session || session.persona !== "white-label") {
-      return NextResponse.json({error: "Unauthorized"}, {status: 401});
-    }
-
-    const users = await collections.users();
-    const user = await users.findOne({email: session.email.toLowerCase()});
-    const agencyOrgId = user?.organizationId;
-    if (!agencyOrgId) {
-      return NextResponse.json({error: "Forbidden: No agency organization found."}, {status: 403});
-    }
+    const auth = await getAuthenticatedWhiteLabeler(request);
+    if (auth.errorResponse) return auth.errorResponse;
+    const {orgId: agencyOrgId, session} = auth.ctx!;
 
     const body = await request.json();
     const {campaignName, channel, dailyBudget, totalAllocated, keywords, creatives, clientOrgId} = body;

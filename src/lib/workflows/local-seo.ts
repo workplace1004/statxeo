@@ -1,5 +1,9 @@
 import "server-only";
 
+import {generateObject} from "ai";
+import {openai} from "@ai-sdk/openai";
+import {z} from "zod";
+
 import type {ObjectId} from "mongodb";
 
 import {collections} from "@/server/db/collections";
@@ -398,61 +402,59 @@ export async function publishAndDraftSocial(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AI stubs — replace with real AI provider calls in production
+// Real AI Generation — OpenAI (GPT-4o)
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function generateKeywordStrategy(intent: string): Promise<KeywordStrategy> {
-  // TODO: replace with Gemini/GPT-4 call
-  // Query: Google Trends, Reddit, competitor keywords, local search demand
-  const match = intent.match(/(.+?)\s+in\s+(.+)/i);
-  const topic = match?.[1] ?? intent;
-  const location = match?.[2] ?? "local area";
+  const result = await generateObject({
+    model: openai("gpt-4o"),
+    system: `You are an expert local SEO strategist. Your job is to create a keyword strategy and suggest pages based on the client's intent. 
+Focus on high-conversion local search intent. Suggest exactly 3-5 pages to create. 
+Identify the primary location, primary keywords, and the reasoning for the strategy.`,
+    prompt: `The client intent is: "${intent}". Develop a local SEO strategy for them.`,
+    schema: z.object({
+      primaryKeywords: z.array(z.string()).describe("A list of 4-6 primary high-value keywords to target."),
+      geoTargets: z.array(z.string()).describe("The main geographical locations or areas to target."),
+      suggestedPages: z.array(z.object({
+        title: z.string().describe("The exact H1 / Title of the suggested page."),
+        targetKeyword: z.string().describe("The primary keyword this specific page targets."),
+        location: z.string().describe("The location this page targets."),
+        description: z.string().describe("A short explanation of what this page is for and why it's valuable.")
+      })).describe("3-5 highly relevant pages to create."),
+      reasoning: z.string().describe("A brief explanation of why this strategy will drive local conversions.")
+    }),
+  });
 
-  return {
-    primaryKeywords: [
-      `${topic} ${location}`,
-      `best ${topic} ${location}`,
-      `${topic} near me`,
-      `affordable ${topic} ${location}`,
-    ],
-    geoTargets: [location],
-    suggestedPages: [
-      {
-        title: `${topic} Services in ${location}`,
-        targetKeyword: `${topic} ${location}`,
-        location,
-        description: `Main service page targeting primary keyword`,
-      },
-      {
-        title: `Best ${topic} Company in ${location}`,
-        targetKeyword: `best ${topic} ${location}`,
-        location,
-        description: `Competitive positioning page`,
-      },
-      {
-        title: `Affordable ${topic} in ${location}`,
-        targetKeyword: `affordable ${topic} ${location}`,
-        location,
-        description: `Price-focused landing page`,
-      },
-    ],
-    reasoning: `Generated from intent: "${intent}". Focus on local search intent in ${location}.`,
-  };
+  return result.object;
 }
 
 async function generatePageContent(
   strategy: KeywordStrategy,
   clientOrgId: string,
 ): Promise<GeneratedPageContent[]> {
-  // TODO: replace with Gemini/GPT-4 call for full page copywriting
-  return strategy.suggestedPages.map((page) => ({
-    title: page.title,
-    targetKeyword: page.targetKeyword,
-    location: page.location,
-    slug: page.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
-    metaTitle: `${page.title} | Professional Services`,
-    metaDescription: `Looking for ${page.targetKeyword}? We provide professional, reliable services in ${page.location}. Contact us today.`,
-    h1: page.title,
-    bodyHtml: `<h1>${page.title}</h1><p>Professional ${page.targetKeyword} services in ${page.location}. Call us today for a free consultation.</p>`,
-  }));
+  const result = await generateObject({
+    model: openai("gpt-4o"),
+    system: `You are an expert SEO copywriter. You have been given a Local SEO strategy containing a list of pages to create.
+Your job is to write the complete, final website content for EACH of those pages.
+The HTML body should use standard tags (<h2>, <h3>, <p>, <ul>, <li>, <strong>) and be structured for conversions. Do not include <html>, <head>, or <body> tags, just the inner HTML. Do NOT include an <h1> tag in the body, as it will be rendered separately.
+Write professional, persuasive copy that targets the specified keyword and location. Write 200-400 words per page.`,
+    prompt: `Generate the final page content for the following local SEO strategy:
+${JSON.stringify(strategy, null, 2)}
+
+Provide the content for every suggested page in the strategy.`,
+    schema: z.object({
+      pages: z.array(z.object({
+        title: z.string().describe("The exact title of the page."),
+        targetKeyword: z.string().describe("The keyword being targeted."),
+        location: z.string().describe("The location being targeted."),
+        slug: z.string().describe("The URL slug (e.g. 'roofing-dallas')."),
+        metaTitle: z.string().describe("The SEO meta title (max 60 chars)."),
+        metaDescription: z.string().describe("The SEO meta description (max 160 chars)."),
+        h1: z.string().describe("The H1 heading for the page."),
+        bodyHtml: z.string().describe("The HTML content for the body of the page (no h1, just h2/p/ul/etc).")
+      }))
+    })
+  });
+
+  return result.object.pages;
 }

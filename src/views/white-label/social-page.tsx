@@ -24,7 +24,8 @@ import {useMemo, useState} from "react";
 
 import {notifyInfo, notifySuccess} from "../../lib/ui/white-label-notify";
 import {SOCIAL_STATUS_COLOR} from "../../server/db/schemas/social-posts";
-import {GeneratePostModal} from "../../widgets/white-label/modals/generate-post-modal";
+import {SocialComposer} from "../../widgets/white-label/social-composer";
+import {SocialPostHistory} from "../../widgets/white-label/social-post-history";
 import {EmptyState} from "../../widgets/empty-state";
 import {PageToolbar} from "../../widgets/white-label/page-toolbar";
 
@@ -105,7 +106,7 @@ export function WhiteLabelSocialPage({posts, voices}: WhiteLabelSocialPageProps)
               <Display className="size-4" />
               Calendar
             </RouteButton>
-            <GeneratePostModal
+            <SocialComposer
               state={composeState}
               trigger={
                 <Button size="sm">
@@ -233,7 +234,10 @@ export function WhiteLabelSocialPage({posts, voices}: WhiteLabelSocialPageProps)
           )}
         </Card.Content>
       </Card>
-      <GeneratePostModal state={composeState} />
+      
+      <SocialPostHistory posts={posts} />
+      
+      <SocialComposer state={composeState} />
     </div>
   );
 }

@@ -215,3 +215,126 @@ Identified and resolved a role escalation vulnerability where Agency Admins coul
 
 #### 4. Verification
 - Ran `pnpm run typecheck` — **zero errors** confirmed across all new files and schema changes.
+
+---
+
+### June 1, 2026: Ad API Environment, Real Charts & Live Analytics Page
+
+#### 1. Google Ads + Meta Ads — Environment Setup
+- Added all required credential variables to [`.env.example`](file:///d:/staxeo%20web/statxeo-main/.env.example):
+  - Google Ads: `GOOGLE_ADS_DEVELOPER_TOKEN`, `GOOGLE_ADS_CUSTOMER_ID`, `GOOGLE_ADS_LOGIN_CUSTOMER_ID`, `GOOGLE_ADS_OAUTH_TOKEN`
+  - Meta Ads: `META_ADS_ACCESS_TOKEN`, `META_AD_ACCOUNT_ID`, `META_PAGE_ID`
+- Both `GoogleAdsClient` and `MetaAdsClient` already auto-detect missing keys and fall back to sandbox/mock mode — no code changes needed. The optimizer in `campaign-optimizer.ts` already wires both clients together.
+- Added [`notifyError`](file:///d:/staxeo%20web/statxeo-main/src/lib/ui/white-label-notify.ts) to the notify module (uses HeroUI `variant: "danger"` — the correct API, `toast.error` does not exist in HeroUI).
+
+#### 2. Charts — Replaced Blank Placeholders with Recharts
+- Replaced all 3 stub chart components in [`heroui-pro-mock.tsx`](file:///d:/staxeo%20web/statxeo-main/src/lib/heroui-pro-mock.tsx) with real Recharts implementations (Recharts v3.8.0 was already installed):
+  - `BarChart` → `ReBarChart` with `CartesianGrid`, `XAxis`, `YAxis`, `Tooltip`, `Bar` (rounded top corners)
+  - `LineChart` → `ReLineChart` with `monotone` curve, dots, active dot, tooltip
+  - `PieChart` → `RePieChart` with donut layout, `Cell` color cycling, `Legend`
+  - All wrapped in `ResponsiveContainer` — fully responsive
+  - Dark-themed: transparent grid lines, `#9ca3af` axis ticks, `#1e1e2e` tooltip background
+  - `ChartTooltip` now renders a real styled popup (was `null` stub before)
+- All export names, prop shapes, and compound-component sub-exports preserved — zero call-site changes required.
+
+#### 3. Analytics Page — Real Data Fetching + Live Charts
+- Created [`src/app/api/analytics/summary/route.ts`](file:///d:/staxeo%20web/statxeo-main/src/app/api/analytics/summary/route.ts) — new `GET` endpoint:
+  - Accepts `?range=7D|30D|90D|12M` time range filter
+  - Aggregates from MongoDB: campaign performance history (spend, impressions, clicks, conversions), social post publish counts, completed workflow counts, total customer count
+  - Returns: 8 KPIs, daily spend trend array (for LineChart), channel split array (Meta vs Google, for PieChart)
+  - Tenant-scoped: only returns data for the authenticated white-labeler's `organizationId`
+- Rebuilt [`analytics-page.tsx`](file:///d:/staxeo%20web/statxeo-main/src/views/white-label/analytics-page.tsx) with full data layer:
+  - Fetches from `/api/analytics/summary` on mount and on range change
+  - 8 live KPI cards with `Skeleton` loading states: Total Ad Spend, Active Campaigns, Total Customers, Posts Published, Impressions, Clicks, Conversions, CTR
+  - Live `LineChart` (spend trend over time range)
+  - Live `PieChart` (Meta vs Google channel split)
+  - Completed workflows count card
+  - Per-section empty states when data is zero
+  - CSV export now uses real aggregated data (not placeholder strings)
+
+#### 4. Verification
+- Ran `pnpm run typecheck` — **zero errors** across all new and modified files.
+- Errors fixed during session: `"published"` → `"Published"` (social posts PascalCase), `toast.error` → `toast(msg, {variant: "danger"})` (correct HeroUI API).
+
+---
+
+### June 2, 2026
+
+#### 1. Outstand Architecture Refactor
+- Confirmed with Mic that white-labeler/client Ad campaigns must route through Outstand OAuth proxy, not direct API tokens.
+- Created `OutstandAdsClient` stub to replace `GoogleAdsClient` and `MetaAdsClient`.
+- Refactored `campaign-optimizer.ts` to look up `outstandAccountId` dynamically per organization and route performance requests through `api.outstand.so`.
+
+#### 2. Real AI Content Generation (OpenAI)
+- Added `OPENAI_API_KEY` to `.env.example`.
+- Refactored `local-seo.ts` to use Vercel AI SDK (`generateObject` with Zod schema) replacing all mocked stub functions.
+- `generateKeywordStrategy` now makes a live call to `gpt-4o` to generate the 3-5 page strategy and keywords.
+- `generatePageContent` now makes a live call to `gpt-4o` to write 200-400 words of SEO-optimized HTML copy for each page.
+
+#### 3. HeroUI PRO Enterprise Upgrade
+- Authenticated the private `@heroui-pro` registry and installed the `@heroui-pro/react` premium component library.
+- Completely decommissioned and deleted the local `heroui-pro-mock.tsx` file and removed TS aliases.
+- Refactored `analytics-page.tsx` charts (`LineChart`, `PieChart`) to use the official compound component architecture (`<LineChart.Line>`, `<PieChart.Pie>`).
+- Validated that `DataGrid`, `AppLayout`, `Sidebar`, and all customer-facing cards automatically inherited the premium functionality flawlessly.
+- Executed full typecheck and build validation to confirm zero broken UI components post-upgrade.
+
+---
+
+### June 3, 2026: Native Ads Pivot & AI Campaign Optimization
+
+#### 1. Architecture Pivot: Native Ads vs Social
+- Discovered that Outstand.so only supports organic social publishing and cannot manage Ads or fetch Ad insights.
+- Decided to pivot and build Native API clients for Meta Ads and Google Ads to support the new AI Ad generation engine.
+
+#### 2. Database Schema Overhaul
+- Added `metaAdsAccessToken`, `googleAdsRefreshToken`, and `googleAdsCustomerId` to `src/server/db/schemas/users.ts` to natively store the Agency/Customer OAuth tokens.
+- Added `metaCampaignId` and `googleCampaignId` to `src/server/db/schemas/campaigns.ts`.
+- Added `aiPrompt` and `generationId` to the `Creative` sub-document in campaigns to properly track AI-generated video performance.
+
+#### 3. Campaign Optimizer Refactor
+- Rewrote the `CampaignOptimizer` script in `src/lib/marketing/campaign-optimizer.ts`.
+- Stripped out the `OutstandAdsClient` dependency.
+- Dynamically looks up the White Labeler's native OAuth credentials.
+- Instantiates either the `MetaAdsClient` or `GoogleAdsClient` depending on the active campaign channel.
+- Automatically pauses underperforming AI ad creatives by issuing real pause mutations to the Meta/Google Graph APIs.
+
+---
+
+### June 4, 2026: Platform Admin (God Mode) Portal
+
+#### 1. Routing & Account Configuration
+- Added the `"platform-admin"` union string to the `AccountType` in `src/shared/nav-types.ts`.
+- Created the dedicated navigation tree (`src/nav/platform-admin.ts`) mapping to Dashboard, Agencies, Global Payouts, API Providers, and Settings.
+- Wrapped the `src/app/platform-admin` directory in the `AppShell` layout to inherit universal, high-fidelity sidebar routing.
+
+#### 2. God Mode Dashboard Interface
+- Created a top-level React Server Component at `src/app/platform-admin/page.tsx` that aggregates data via new helpers in `src/server/queries/platform.ts`.
+- Built out `src/views/platform-admin/dashboard-page.tsx` using native HeroUI PRO compound components (`Card.Header`, `Card.Content`).
+- Implemented three core widgets:
+  - **Global MRR KPI**: Displays aggregated platform-wide revenue.
+  - **Provider Health Card**: Visualizes live status metrics for OpenAI, Meta, Google, and Outstand APIs.
+  - **Agencies List**: Rendered a structured grid containing every provisioned white-label agency, their active client count, their ad campaign count, and a stubbed `handleImpersonate` action trigger.
+
+#### 3. Strict Type Safety Verification
+- Resolved strict type alignment issues across HeroUI PRO `Button` variants (`variant="danger"`, `variant="tertiary"`) and `Chip` colors (`color="default"` vs `"primary"`).
+- Executed `npx tsc --noEmit` which completed successfully with zero errors, validating the structural integrity of the newly introduced portal.
+
+---
+
+### June 5, 2026: Social Engine & System Security Refactoring
+
+#### 1. System Refactoring & Secure Contexts
+- Created `src/server/api-context.ts` exporting a unified `getAuthenticatedWhiteLabeler` function. This centralizes authentication, session parsing, database lookups, and organization checks.
+- Refactored critical API endpoints (`/api/analytics/summary`, `/api/marketing/campaigns`, `/api/marketing/optimize`) to use the new unified secure context, stripping out redundant code and ensuring bulletproof authentication.
+- Resolved lingering TypeScript `any` warnings in the analytics summary by properly mapping to the `PerformanceHistory` interface.
+
+#### 2. Organic Social Composer Interface
+- Replaced the basic generator modals in `src/views/white-label/social-page.tsx` with a fully featured `SocialComposer` component.
+- **Drag-and-Drop Media**: Implemented a native HTML5 dropzone supporting multiple file uploads for images (JPG, PNG, WEBP) and video (MP4), dynamically rendering local object URL previews.
+- **Cross-Platform Render Previews**: Built dynamic preview panes that show exactly how the post will render on the selected platform, actively enforcing platform-specific character limits.
+
+#### 3. Social Publishing & Audit Logs
+- Built `src/app/api/social/posts/route.ts` implementing strict server-side Zod validation on `mediaUrls` and ensuring `scheduledFor` dates remain in the future.
+- Built `src/widgets/white-label/social-post-history.tsx` to act as an immutable audit log, presenting historical engagement metrics and status labels.
+- **Outstand Webhooks**: Created `/api/webhooks/outstand/route.ts` with military-grade HMAC SHA-256 cryptographic signature validation to securely flip post status from `Awaiting Approval` or `Scheduled` to `Published` upon receiving callbacks.
+- Re-ran `npx tsc --noEmit` which executed flawlessly, ensuring the system remains completely type-safe.

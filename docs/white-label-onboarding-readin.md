@@ -1,4 +1,20 @@
+> [!WARNING]
+> **THIS DOCUMENT IS OUTDATED — V1 ARCHITECTURE ONLY**
+>
+> This doc describes the original V1 architecture of StatXEO which has since been **fully replaced**.
+> Key things that have changed:
+>
+> - ❌ **Supabase** — fully purged from the codebase. A `check:no-supabase` CI script prevents re-introduction.
+> - ❌ **`/app` directory** — decommissioned. All code now lives in `/src`.
+> - ❌ **Shared STATXT Supabase DB** — replaced by **MongoDB Atlas** (`xeo.d7ee8bx.mongodb.net`, db: `statxeo`) with 38 isolated collections.
+> - ❌ **`lib/statxt-api.ts` Supabase client** — replaced with HMAC session auth and MongoDB.
+> - ❌ **`SUPABASE_SERVICE_ROLE_KEY` / `NEXT_PUBLIC_SUPABASE_URL`** — no longer used.
+>
+> **Current architecture reference:** See [`docs/development-log.md`](./development-log.md) for the full V2 migration history (starting May 4, 2026).
+> For a quick catch-up on the current system, see the Mic Briefing artifact.
+
 # STATXEO White-Label + AI Site Builder Onboarding
+
 
 ## 1) Current Product State (Today)
 

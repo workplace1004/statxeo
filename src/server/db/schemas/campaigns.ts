@@ -17,6 +17,8 @@ export interface Creative {
   conversionRate: number;
   spend: number;
   status: CreativeStatus;
+  aiPrompt?: string;
+  generationId?: string;
 }
 
 export interface PerformanceHistory {
@@ -32,6 +34,8 @@ export interface CampaignDoc extends BaseDoc {
   whiteLabelerId: string;
   campaignName: string;
   channel: "meta" | "google";
+  metaCampaignId?: string;
+  googleCampaignId?: string;
   budget: {
     dailyLimit: number;
     totalAllocated: number;
@@ -61,6 +65,8 @@ export interface Campaign {
   whiteLabelerId: string;
   campaignName: string;
   channel: "meta" | "google";
+  metaCampaignId?: string;
+  googleCampaignId?: string;
   budget: {
     dailyLimit: number;
     totalAllocated: number;
@@ -87,6 +93,8 @@ export const creativeInputSchema = z.object({
   conversionRate: z.number().default(0),
   spend: z.number().default(0),
   status: z.enum(CREATIVE_STATUSES).default("draft"),
+  aiPrompt: z.string().optional(),
+  generationId: z.string().optional(),
 });
 
 export const campaignInputSchema = z.object({
@@ -94,6 +102,8 @@ export const campaignInputSchema = z.object({
   whiteLabelerId: z.string().min(1),
   campaignName: z.string().min(1, "Campaign name is required"),
   channel: z.enum(["meta", "google"]),
+  metaCampaignId: z.string().optional(),
+  googleCampaignId: z.string().optional(),
   budget: z.object({
     dailyLimit: z.number().positive(),
     totalAllocated: z.number().positive(),
@@ -117,6 +127,8 @@ export function serializeCampaign(doc: CampaignDoc): Campaign {
     whiteLabelerId: doc.whiteLabelerId,
     campaignName: doc.campaignName,
     channel: doc.channel,
+    metaCampaignId: doc.metaCampaignId,
+    googleCampaignId: doc.googleCampaignId,
     budget: doc.budget,
     status: doc.status,
     keywords: doc.keywords,
