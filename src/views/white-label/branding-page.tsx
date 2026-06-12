@@ -5,6 +5,7 @@ import type {
   BrandPalette,
   BrandedDomain,
 } from "../../server/db/schemas/branding";
+import type {Organization} from "../../server/db/schemas/organizations";
 
 import {
   ArrowUpFromSquare,
@@ -14,6 +15,7 @@ import {
   Pencil,
   Plus,
   Star,
+  TrashBin,
 } from "@gravity-ui/icons";
 import {
   Avatar,
@@ -38,16 +40,163 @@ export interface WhiteLabelBrandingPageProps {
   palettes: BrandPalette[];
   assets: BrandAsset[];
   domains: BrandedDomain[];
+  organization: Organization | null;
 }
 
 export function WhiteLabelBrandingPage({
   assets,
   domains,
   palettes,
+  organization,
 }: WhiteLabelBrandingPageProps) {
   const domainState = useOverlayState();
-  const [activePaletteId, setActivePaletteId] = useState(palettes[0]?.id ?? "");
   const [domainInput, setDomainInput] = useState("");
+
+  // Match organization brand colors to active palette if possible
+  const matchedPalette = palettes.find(
+    (p) =>
+      p.primary === organization?.brand?.primaryColor &&
+      p.secondary === organization?.brand?.secondaryColor &&
+      p.accent === organization?.brand?.accentColor
+  );
+  const [activePaletteId, setActivePaletteId] = useState(matchedPalette?.id ?? palettes[0]?.id ?? "");
+
+  // Form states
+  const [emailFromName, setEmailFromName] = useState(organization?.brand?.emailFromName ?? "");
+  const [emailFromAddress, setEmailFromAddress] = useState(organization?.brand?.emailFromAddress ?? "");
+  const [emailFooter, setEmailFooter] = useState(organization?.brand?.emailFooter ?? "");
+  const [emailHideBranding, setEmailHideBranding] = useState(!!organization?.brand?.emailHideBranding);
+
+  const [loginHeadline, setLoginHeadline] = useState(organization?.brand?.loginHeadline ?? "");
+  const [loginSubhead, setLoginSubhead] = useState(organization?.brand?.loginSubhead ?? "");
+  const [loginBgUrl, setLoginBgUrl] = useState(organization?.brand?.loginBgUrl ?? "");
+
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isAddingDomain, setIsAddingDomain] = useState(false);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handlePublishBranding = async () => {
+    setIsPublishing(true);
+    try {
+      const activePalette = palettes.find((p) => p.id === activePaletteId);
+      const payload = {
+        primaryColor: activePalette?.primary ?? organization?.brand?.primaryColor ?? null,
+        secondaryColor: activePalette?.secondary ?? organization?.brand?.secondaryColor ?? null,
+        accentColor: activePalette?.accent ?? organization?.brand?.accentColor ?? null,
+        emailFromName: emailFromName || null,
+        emailFromAddress: emailFromAddress || null,
+        emailFooter: emailFooter || null,
+        emailHideBranding: emailHideBranding,
+        loginHeadline: loginHeadline || null,
+        loginSubhead: loginSubhead || null,
+        loginBgUrl: loginBgUrl || null,
+      };
+
+      const res = await fetch("/api/white-label/branding", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (data.ok) {
+        notifySuccess("Branding published to all customer workspaces");
+      } else {
+        alert(data.error?.message || "Failed to publish branding");
+      }
+    } catch (err) {
+      console.error("Publish branding error:", err);
+      alert("An unexpected error occurred while saving branding");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleAddDomain = async () => {
+    const domain = domainInput.trim();
+    if (!domain) return;
+    setIsAddingDomain(true);
+    try {
+      const res = await fetch("/api/white-label/branding/domains", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({domain, type: "app"}),
+      });
+
+      const data = await res.json();
+      if (data.ok) {
+        notifySuccess(`Domain ${domain} added — DNS verification pending`);
+        setDomainInput("");
+        domainState.close();
+        window.location.reload();
+      } else {
+        alert(data.error?.message || "Failed to add domain");
+      }
+    } catch (err) {
+      console.error("Add domain error:", err);
+      alert("An unexpected error occurred");
+    } finally {
+      setIsAddingDomain(false);
+    }
+  };
+
+  const handleVerifyDomain = async (domainId: string) => {
+    setVerifyingId(domainId);
+    try {
+      const res = await fetch("/api/white-label/branding/domains", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({domainId}),
+      });
+
+      const data = await res.json();
+      if (data.ok) {
+        notifySuccess("DNS verified successfully");
+        window.location.reload();
+      } else {
+        alert(data.error?.message || "Failed to verify domain");
+      }
+    } catch (err) {
+      console.error("Verify domain error:", err);
+      alert("An unexpected error occurred");
+    } finally {
+      setVerifyingId(null);
+    }
+  };
+
+  const handleDeleteDomain = async (domainId: string) => {
+    if (!confirm("Are you sure you want to remove this custom domain?")) return;
+    setDeletingId(domainId);
+    try {
+      const res = await fetch("/api/white-label/branding/domains", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({domainId}),
+      });
+
+      const data = await res.json();
+      if (data.ok) {
+        notifySuccess("Branded domain removed successfully");
+        window.location.reload();
+      } else {
+        alert(data.error?.message || "Failed to remove domain");
+      }
+    } catch (err) {
+      console.error("Delete domain error:", err);
+      alert("An unexpected error occurred");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 pb-10 pt-4">
@@ -58,10 +207,15 @@ export function WhiteLabelBrandingPage({
         trailing={
           <Button
             size="sm"
-            onPress={() => notifySuccess("Branding published to all customer workspaces")}
+            isDisabled={isPublishing}
+            onPress={handlePublishBranding}
           >
-            <Check className="size-4" />
-            Publish branding
+            {isPublishing ? (
+              <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : (
+              <Check className="size-4" />
+            )}
+            {isPublishing ? "Publishing…" : "Publish branding"}
           </Button>
         }
       />
@@ -131,7 +285,7 @@ export function WhiteLabelBrandingPage({
               <Card.Description>Choose a theme or build a custom one.</Card.Description>
             </Card.Header>
             <Card.Content className="flex flex-col gap-2">
-              {palettes.map((p, idx) => (
+              {palettes.map((p) => (
                 <div
                   key={p.id}
                   className={`flex items-center gap-3 rounded-xl border p-3 ${
@@ -206,34 +360,33 @@ export function WhiteLabelBrandingPage({
               </Button>
             }
           >
-              <Modal.Container placement="center" size="md">
-                <Modal.Dialog>
-                  <Modal.Header>
-                    <Modal.Heading>Add branded domain</Modal.Heading>
-                  </Modal.Header>
-                  <Modal.Body>
-                    <TextField name="domain" value={domainInput} onChange={setDomainInput}>
-                      <Label>Domain</Label>
-                      <Input placeholder="app.youragency.com" />
-                    </TextField>
-                  </Modal.Body>
-                  <Modal.Footer>
-                    <Button slot="close" variant="tertiary">
-                      Cancel
-                    </Button>
-                    <Button
-                      isDisabled={!domainInput.trim()}
-                      onPress={() => {
-                        notifySuccess(`Domain ${domainInput.trim()} added — DNS verification pending`);
-                        setDomainInput("");
-                        domainState.close();
-                      }}
-                    >
-                      Add domain
-                    </Button>
-                  </Modal.Footer>
-                </Modal.Dialog>
-              </Modal.Container>
+            <Modal.Container placement="center" size="md">
+              <Modal.Dialog>
+                <Modal.Header>
+                  <Modal.Heading>Add branded domain</Modal.Heading>
+                </Modal.Header>
+                <Modal.Body>
+                  <TextField name="domain" value={domainInput} onChange={setDomainInput}>
+                    <Label>Domain</Label>
+                    <Input placeholder="app.youragency.com" />
+                  </TextField>
+                </Modal.Body>
+                <Modal.Footer>
+                  <Button slot="close" variant="tertiary">
+                    Cancel
+                  </Button>
+                  <Button
+                    isDisabled={!domainInput.trim() || isAddingDomain}
+                    onPress={handleAddDomain}
+                  >
+                    {isAddingDomain ? (
+                      <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    ) : null}
+                    Add domain
+                  </Button>
+                </Modal.Footer>
+              </Modal.Dialog>
+            </Modal.Container>
           </ModalShell>
         </Card.Header>
         <Card.Content className="flex flex-col gap-2">
@@ -256,15 +409,39 @@ export function WhiteLabelBrandingPage({
                     <span className="text-muted text-xs capitalize">{d.type} domain</span>
                   </div>
                 </div>
-                <Chip
-                  color={
-                    d.status === "Active" ? "success" : d.status === "Pending" ? "warning" : "danger"
-                  }
-                  size="sm"
-                  variant="soft"
-                >
-                  {d.status}
-                </Chip>
+                
+                <div className="flex items-center gap-3">
+                  {d.status !== "Active" && (
+                    <Button
+                      size="sm"
+                      variant="tertiary"
+                      isDisabled={verifyingId !== null}
+                      onPress={() => handleVerifyDomain(d.id)}
+                    >
+                      {verifyingId === d.id ? "Verifying…" : "Verify DNS"}
+                    </Button>
+                  )}
+                  
+                  <Chip
+                    color={
+                      d.status === "Active" ? "success" : d.status === "Pending" ? "warning" : "danger"
+                    }
+                    size="sm"
+                    variant="soft"
+                  >
+                    {d.status}
+                  </Chip>
+
+                  <Button
+                    size="sm"
+                    variant="tertiary"
+                    isIconOnly
+                    isDisabled={deletingId !== null}
+                    onPress={() => handleDeleteDomain(d.id)}
+                  >
+                    <TrashBin className="size-4 text-danger" />
+                  </Button>
+                </div>
               </div>
             ))
           )}
@@ -285,19 +462,19 @@ export function WhiteLabelBrandingPage({
             </div>
           </Card.Header>
           <Card.Content className="flex flex-col gap-3">
-            <TextField name="email-from-name">
+            <TextField name="email-from-name" value={emailFromName} onChange={setEmailFromName}>
               <Label className="text-foreground text-sm font-medium">From name</Label>
               <Input placeholder="Your agency" />
             </TextField>
-            <TextField name="email-from-address">
+            <TextField name="email-from-address" value={emailFromAddress} onChange={setEmailFromAddress}>
               <Label className="text-foreground text-sm font-medium">From address</Label>
               <Input placeholder="hello@mail.youragency.com" type="email" />
             </TextField>
-            <TextField name="email-footer">
+            <TextField name="email-footer" value={emailFooter} onChange={setEmailFooter}>
               <Label className="text-foreground text-sm font-medium">Footer text</Label>
               <Input placeholder="© Your agency · all rights reserved" />
             </TextField>
-            <Checkbox id="email-show-statxeo">
+            <Checkbox id="email-show-statxeo" isSelected={emailHideBranding} onChange={setEmailHideBranding}>
               <Checkbox.Control>
                 <Checkbox.Indicator />
               </Checkbox.Control>
@@ -323,17 +500,18 @@ export function WhiteLabelBrandingPage({
             </div>
           </Card.Header>
           <Card.Content className="flex flex-col gap-3">
-            <TextField name="login-headline">
+            <TextField name="login-headline" value={loginHeadline} onChange={setLoginHeadline}>
               <Label className="text-foreground text-sm font-medium">Headline</Label>
               <Input placeholder="Welcome back" />
             </TextField>
-            <TextField name="login-subhead">
+            <TextField name="login-subhead" value={loginSubhead} onChange={setLoginSubhead}>
               <Label className="text-foreground text-sm font-medium">Sub-headline</Label>
               <Input placeholder="Sign in to manage your growth dashboard." />
             </TextField>
-            <div className="bg-content2 text-muted flex aspect-[4/2] items-center justify-center rounded-xl text-xs">
-              Drag background image here · 1920 × 1080 recommended
-            </div>
+            <TextField name="login-bg-url" value={loginBgUrl} onChange={setLoginBgUrl}>
+              <Label className="text-foreground text-sm font-medium">Background image URL</Label>
+              <Input placeholder="https://unsplash.com/... or relative path" />
+            </TextField>
           </Card.Content>
         </Card>
       </div>

@@ -15,13 +15,14 @@ import {
   Stopwatch,
   Thunderbolt,
 } from "@gravity-ui/icons";
-import {Button, Card, Chip, SearchField} from "@heroui/react";
+import {Button, Card, Chip, SearchField, useOverlayState} from "@heroui/react";
 import {DataGrid, KPI, KPIGroup, NumberValue} from "@heroui-pro/react";
-import {useMemo} from "react";
+import {useMemo, useState} from "react";
 
 import {IconButton} from "../../components/icon-button";
 import {WORKFLOW_STATUS_COLOR} from "../../server/db/schemas/workflows";
 import {EmptyState} from "../../widgets/empty-state";
+import {NewWorkflowModal} from "../../widgets/white-label/modals/new-workflow-modal";
 import {PageToolbar} from "../../widgets/white-label/page-toolbar";
 
 export interface WhiteLabelAutomationPageProps {
@@ -29,6 +30,29 @@ export interface WhiteLabelAutomationPageProps {
 }
 
 export function WhiteLabelAutomationPage({workflows}: WhiteLabelAutomationPageProps) {
+  const newWorkflowState = useOverlayState();
+  const [search, setSearch] = useState("");
+
+  const filteredWorkflows = useMemo(() => {
+    if (!search.trim()) return workflows;
+    const q = search.toLowerCase();
+    return workflows.filter(
+      (w) => w.name.toLowerCase().includes(q) || w.description.toLowerCase().includes(q)
+    );
+  }, [workflows, search]);
+
+  const kpis = useMemo(() => {
+    const active = workflows.filter((w) => w.status === "Active").length;
+    const runs = workflows.reduce((sum, w) => sum + w.runsLast7Days, 0);
+    const totalRuns = runs;
+    const successRate = totalRuns > 0
+      ? workflows.reduce((sum, w) => sum + (w.successRate * w.runsLast7Days), 0) / totalRuns
+      : 0;
+    // Assume 15 minutes saved per run
+    const timeSavedHrs = (runs * 15) / 60;
+
+    return {active, runs, successRate, timeSavedHrs};
+  }, [workflows]);
   const columns = useMemo<DataGridColumn<Workflow>[]>(
     () => [
       {
@@ -163,10 +187,15 @@ export function WhiteLabelAutomationPage({workflows}: WhiteLabelAutomationPagePr
               <FileText className="size-4" />
               Templates
             </Button>
-            <Button size="sm">
-              <Plus className="size-4" />
-              New workflow
-            </Button>
+            <NewWorkflowModal
+              state={newWorkflowState}
+              trigger={
+                <Button size="sm">
+                  <Plus className="size-4" />
+                  New workflow
+                </Button>
+              }
+            />
           </>
         }
       />
@@ -177,7 +206,7 @@ export function WhiteLabelAutomationPage({workflows}: WhiteLabelAutomationPagePr
             <KPI.Title>Active workflows</KPI.Title>
           </KPI.Header>
           <KPI.Content>
-            <span className="text-foreground text-2xl font-semibold tabular-nums">—</span>
+            <span className="text-foreground text-2xl font-semibold tabular-nums">{kpis.active}</span>
           </KPI.Content>
         </KPI>
         <KPIGroup.Separator />
@@ -186,7 +215,7 @@ export function WhiteLabelAutomationPage({workflows}: WhiteLabelAutomationPagePr
             <KPI.Title>Runs (7d)</KPI.Title>
           </KPI.Header>
           <KPI.Content>
-            <span className="text-foreground text-2xl font-semibold tabular-nums">—</span>
+            <span className="text-foreground text-2xl font-semibold tabular-nums">{kpis.runs}</span>
           </KPI.Content>
         </KPI>
         <KPIGroup.Separator />
@@ -195,7 +224,12 @@ export function WhiteLabelAutomationPage({workflows}: WhiteLabelAutomationPagePr
             <KPI.Title>Success rate</KPI.Title>
           </KPI.Header>
           <KPI.Content>
-            <span className="text-foreground text-2xl font-semibold tabular-nums">—</span>
+            <NumberValue
+              className="text-foreground text-2xl font-semibold tabular-nums"
+              maximumFractionDigits={1}
+              style="percent"
+              value={kpis.successRate}
+            />
           </KPI.Content>
         </KPI>
         <KPIGroup.Separator />
@@ -204,7 +238,9 @@ export function WhiteLabelAutomationPage({workflows}: WhiteLabelAutomationPagePr
             <KPI.Title>Time saved</KPI.Title>
           </KPI.Header>
           <KPI.Content>
-            <span className="text-foreground text-2xl font-semibold tabular-nums">—</span>
+            <span className="text-foreground text-2xl font-semibold tabular-nums">
+              {kpis.timeSavedHrs.toFixed(1)} hrs
+            </span>
           </KPI.Content>
         </KPI>
       </KPIGroup>
@@ -233,7 +269,7 @@ export function WhiteLabelAutomationPage({workflows}: WhiteLabelAutomationPagePr
       {isEmpty ? (
         <EmptyState
           body="Build your first automation to react to leads, reviews, or schedules."
-          cta={{label: "New workflow"}}
+          cta={{label: "New workflow", onPress: newWorkflowState.open}}
           icon={Thunderbolt}
           title="No workflows yet"
         />
@@ -250,6 +286,7 @@ export function WhiteLabelAutomationPage({workflows}: WhiteLabelAutomationPagePr
               aria-label="Search workflows"
               className="w-full sm:w-[220px]"
               name="workflows-search"
+              onChange={setSearch}
             >
               <SearchField.Group>
                 <SearchField.SearchIcon />
@@ -263,12 +300,13 @@ export function WhiteLabelAutomationPage({workflows}: WhiteLabelAutomationPagePr
               aria-label="Workflows"
               columns={columns}
               contentClassName="min-w-[1100px]"
-              data={workflows}
+              data={filteredWorkflows}
               getRowId={(item) => item.id}
             />
           </Card.Content>
         </Card>
       )}
+      <NewWorkflowModal state={newWorkflowState} />
     </div>
   );
 }

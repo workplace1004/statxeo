@@ -29,6 +29,7 @@ export interface SiteDoc extends BaseDoc {
   lastPublishedAt: Date | null;
   monthlyVisits: number;
   previewUrl: string | null;
+  tier?: string | null;
 }
 
 export interface Site {
@@ -42,6 +43,7 @@ export interface Site {
   lastPublished: string;
   monthlyVisits: number;
   preview: string;
+  tier: string | null;
 }
 
 export const siteInputSchema = z.object({
@@ -56,6 +58,7 @@ export const siteInputSchema = z.object({
   pages: z.number().int().min(0).optional(),
   monthlyVisits: z.number().int().min(0).optional(),
   previewUrl: z.string().url().nullable().optional(),
+  tier: z.string().nullable().optional(),
 });
 export type SiteInput = z.infer<typeof siteInputSchema>;
 
@@ -71,5 +74,6 @@ export function serializeSite(doc: SiteDoc): Site {
     lastPublished: doc.lastPublishedAt ? dateToIso(doc.lastPublishedAt).slice(0, 10) : "—",
     monthlyVisits: doc.monthlyVisits,
     preview: doc.previewUrl ?? "",
+    tier: doc.tier ?? "Standard",
   };
 }

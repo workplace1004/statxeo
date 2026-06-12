@@ -20,6 +20,7 @@ import {
   TextField,
 } from "@heroui/react";
 
+import type {Organization} from "../../server/db/schemas/organizations";
 import {notifyInfo, notifySuccess} from "../../lib/ui/white-label-notify";
 import {PageToolbar} from "../../widgets/white-label/page-toolbar";
 
@@ -30,8 +31,47 @@ const TIMEZONES = [
   {id: "pt", label: "Pacific Time (US)"},
 ] as const;
 
-export function WhiteLabelSettingsPage() {
-  const [saved, setSaved] = useState(false);
+export interface WhiteLabelSettingsPageProps {
+  organization: Organization | null;
+}
+
+export function WhiteLabelSettingsPage({organization}: WhiteLabelSettingsPageProps) {
+  const [isSaving, setIsSaving] = useState(false);
+
+  // General settings state
+  const [agencyName, setAgencyName] = useState(organization?.name ?? "");
+  const [timezone, setTimezone] = useState(organization?.timezone ?? "et");
+  const [defaultAiTone, setDefaultAiTone] = useState(organization?.defaultAiTone ?? "");
+  const [showPoweredByBadge, setShowPoweredByBadge] = useState(organization?.showPoweredByBadge ?? true);
+
+  const handleSaveSettings = async () => {
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/white-label/settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          agencyName,
+          timezone,
+          defaultAiTone,
+          showPoweredByBadge,
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        notifySuccess("Agency settings saved");
+      } else {
+        alert(data.error?.message || "Failed to save settings");
+      }
+    } catch (err) {
+      console.error("Save settings error:", err);
+      alert("An unexpected error occurred while saving settings");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-4 px-5 pb-10 pt-4">
@@ -42,12 +82,13 @@ export function WhiteLabelSettingsPage() {
         trailing={
           <Button
             size="sm"
-            onPress={() => {
-              setSaved(true);
-              notifySuccess("Agency settings saved");
-            }}
+            isDisabled={isSaving || !agencyName.trim()}
+            onPress={handleSaveSettings}
           >
-            {saved ? "Saved" : "Save changes"}
+            {isSaving ? (
+              <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : null}
+            {isSaving ? "Saving…" : "Save changes"}
           </Button>
         }
       />
@@ -75,12 +116,12 @@ export function WhiteLabelSettingsPage() {
         </Tabs.ListContainer>
 
         <Tabs.Panel id="general">
-          <form className="flex flex-col gap-1 pt-4">
+          <form className="flex flex-col gap-1 pt-4" onSubmit={(e) => e.preventDefault()}>
             <SettingsRow
               description="Shown on every customer-facing surface."
               label="Agency name"
             >
-              <TextField name="agency-name">
+              <TextField name="agency-name" value={agencyName} onChange={setAgencyName}>
                 <Label className="sr-only">Agency name</Label>
                 <Input fullWidth placeholder="Your agency" />
               </TextField>
@@ -90,7 +131,11 @@ export function WhiteLabelSettingsPage() {
               description="Default timezone for reports and scheduling."
               label="Timezone"
             >
-              <Select name="tz">
+              <Select
+                name="tz"
+                selectedKey={timezone}
+                onSelectionChange={(key) => setTimezone(String(key))}
+              >
                 <Label className="sr-only">Timezone</Label>
                 <Select.Trigger>
                   <Select.Value />
@@ -110,7 +155,7 @@ export function WhiteLabelSettingsPage() {
             </SettingsRow>
             <Separator />
             <SettingsRow description="Default tone for AI-generated content." label="Default AI tone">
-              <TextField name="ai-tone">
+              <TextField name="ai-tone" value={defaultAiTone} onChange={setDefaultAiTone}>
                 <Label className="sr-only">Default AI tone</Label>
                 <TextArea
                   className="min-h-24"
@@ -123,7 +168,11 @@ export function WhiteLabelSettingsPage() {
               description="Quietly publish a powered-by badge on customer sites."
               label="Powered-by badge"
             >
-              <Switch aria-label="Show powered-by badge on customer sites" defaultSelected>
+              <Switch
+                aria-label="Show powered-by badge on customer sites"
+                isSelected={showPoweredByBadge}
+                onChange={setShowPoweredByBadge}
+              >
                 <Switch.Control>
                   <Switch.Thumb />
                 </Switch.Control>

@@ -22,6 +22,7 @@ import {
   GenerateWebsiteButton,
   GenerateWebsiteModal,
 } from "../../widgets/white-label/modals/generate-website-modal";
+import {WebsiteOptionsModal} from "../../widgets/white-label/modals/website-options-modal";
 import {SITE_STATUS_COLOR} from "../../server/db/schemas/sites";
 import {EmptyState} from "../../widgets/empty-state";
 import {PageToolbar} from "../../widgets/white-label/page-toolbar";
@@ -216,14 +217,18 @@ export function WhiteLabelWebsitesPage({sites}: WhiteLabelWebsitesPageProps) {
                       <span className="text-muted truncate text-xs">{site.customer}</span>
                     </div>
                   </div>
-                  <IconButton
-                    label="More options"
-                    size="sm"
-                    variant="tertiary"
-                    onPress={() => notifyInfo(`Options for ${site.domain}`)}
-                  >
-                    <EllipsisVertical className="size-4" />
-                  </IconButton>
+                  <WebsiteOptionsModal
+                    site={site}
+                    trigger={
+                      <IconButton
+                        label="More options"
+                        size="sm"
+                        variant="tertiary"
+                      >
+                        <EllipsisVertical className="size-4" />
+                      </IconButton>
+                    }
+                  />
                 </Card.Header>
                 <Card.Content className="flex flex-col gap-2 pt-0">
                   <div className="text-muted flex items-center justify-between text-xs">

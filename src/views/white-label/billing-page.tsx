@@ -1,12 +1,13 @@
 "use client";
 
 import type {InvoiceAgency} from "../../server/db/schemas/invoices";
+import type {Organization} from "../../server/db/schemas/organizations";
 import type {DataGridColumn} from "@heroui-pro/react";
 
 import {ArrowDownToLine, CreditCard, Eye, FileText, Plus} from "@gravity-ui/icons";
 import {Avatar, Button, Card, Chip, useOverlayState} from "@heroui/react";
 import {DataGrid, KPI, KPIGroup, NumberValue} from "@heroui-pro/react";
-import {useMemo} from "react";
+import {useMemo, useState} from "react";
 
 import {IconButton} from "../../components/icon-button";
 import {exportInvoicesCsv} from "../../lib/export/export-invoices-csv";
@@ -18,10 +19,41 @@ import {PageToolbar} from "../../widgets/white-label/page-toolbar";
 
 export interface WhiteLabelBillingPageProps {
   invoices: InvoiceAgency[];
+  organization: Organization | null;
 }
 
-export function WhiteLabelBillingPage({invoices}: WhiteLabelBillingPageProps) {
+export function WhiteLabelBillingPage({invoices, organization}: WhiteLabelBillingPageProps) {
   const invoiceState = useOverlayState();
+  const [stripeConnected, setStripeConnected] = useState(organization?.stripeConnected ?? false);
+  const [connecting, setConnecting] = useState(false);
+
+  const handleToggleStripe = async () => {
+    setConnecting(true);
+    try {
+      const res = await fetch("/api/white-label/billing/stripe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          stripeConnected: !stripeConnected,
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setStripeConnected(!stripeConnected);
+        notifySuccess(!stripeConnected ? "Stripe account connected" : "Stripe account disconnected");
+        window.location.reload();
+      } else {
+        alert(data.error?.message || "Failed to toggle Stripe Connect");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An unexpected error occurred while toggling Stripe Connect");
+    } finally {
+      setConnecting(false);
+    }
+  };
 
   const columns = useMemo<DataGridColumn<InvoiceAgency>[]>(
     () => [
@@ -223,7 +255,7 @@ export function WhiteLabelBillingPage({invoices}: WhiteLabelBillingPageProps) {
         </KPI>
       </KPIGroup>
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="rounded-2xl">
           <Card.Header>
             <Card.Title className="text-base">Plan usage</Card.Title>
@@ -268,6 +300,37 @@ export function WhiteLabelBillingPage({invoices}: WhiteLabelBillingPageProps) {
               Margins appear once customers are subscribed to your plans.
             </p>
           </Card.Content>
+        </Card>
+
+        <Card className="rounded-2xl">
+          <Card.Header className="flex-row items-center justify-between">
+            <div className="flex flex-col gap-0.5">
+              <Card.Title className="text-base">Stripe Connect</Card.Title>
+              <Card.Description>Enable client billing.</Card.Description>
+            </div>
+            <Chip color={stripeConnected ? "success" : "default"} size="sm" variant="soft">
+              {stripeConnected ? "Connected" : "Not Linked"}
+            </Chip>
+          </Card.Header>
+          <Card.Content className="flex flex-col gap-2 py-2">
+            <p className="text-muted text-xs leading-normal">
+              Accept credit cards, set up subscription tiers, and automate payments to your bank account.
+            </p>
+          </Card.Content>
+          <Card.Footer>
+            <Button
+              className="w-full"
+              size="sm"
+              variant={stripeConnected ? "danger-soft" : "primary"}
+              isDisabled={connecting}
+              onPress={handleToggleStripe}
+            >
+              {connecting && (
+                <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent mr-1" />
+              )}
+              {stripeConnected ? "Disconnect Stripe" : "Link Stripe Account"}
+            </Button>
+          </Card.Footer>
         </Card>
       </div>
 

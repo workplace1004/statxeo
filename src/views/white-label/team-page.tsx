@@ -26,6 +26,29 @@ export interface WhiteLabelTeamPageProps {
 export function WhiteLabelTeamPage({log, members}: WhiteLabelTeamPageProps) {
   const inviteState = useOverlayState();
   const [search, setSearch] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleRemoveTeammate = async (memberId: string, name: string) => {
+    if (!confirm(`Are you sure you want to remove ${name} from the team?`)) return;
+    setDeletingId(memberId);
+    try {
+      const res = await fetch(`/api/white-label/team?memberId=${memberId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.ok) {
+        notifySuccess(`Removed ${name} from the team`);
+        window.location.reload();
+      } else {
+        alert(data.error?.message || "Failed to remove team member");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An unexpected error occurred while removing team member");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const filteredMembers = useMemo(() => {
     if (!search.trim()) return members;
@@ -43,122 +66,123 @@ export function WhiteLabelTeamPage({log, members}: WhiteLabelTeamPageProps) {
       };
 
       return [
-      {
-        accessorKey: "name",
-        allowsSorting: true,
-        cell: (item) => (
-          <div className="flex items-center gap-3">
-            <Avatar className="size-8">
-              <Avatar.Image alt={item.name} src={item.avatar} />
-              <Avatar.Fallback>
-                {item.name
-                  .split(" ")
-                  .map((p) => p[0])
-                  .join("")}
-              </Avatar.Fallback>
-            </Avatar>
-            <div className="flex min-w-0 flex-col">
-              <span className="text-foreground text-sm font-medium leading-tight">
-                {item.name}
-              </span>
-              <span className="text-muted text-xs leading-tight">{item.email}</span>
+        {
+          accessorKey: "name",
+          allowsSorting: true,
+          cell: (item) => (
+            <div className="flex items-center gap-3">
+              <Avatar className="size-8">
+                <Avatar.Image alt={item.name} src={item.avatar} />
+                <Avatar.Fallback>
+                  {item.name
+                    .split(" ")
+                    .map((p) => p[0])
+                    .join("")}
+                </Avatar.Fallback>
+              </Avatar>
+              <div className="flex min-w-0 flex-col">
+                <span className="text-foreground text-sm font-medium leading-tight">
+                  {item.name}
+                </span>
+                <span className="text-muted text-xs leading-tight">{item.email}</span>
+              </div>
             </div>
-          </div>
-        ),
-        header: "Member",
-        id: "name",
-        isRowHeader: true,
-        minWidth: 260,
-      },
-      {
-        accessorKey: "role",
-        allowsSorting: true,
-        cell: (item) => (
-          <Chip color={TEAM_ROLE_COLOR[item.role]} size="sm" variant="soft">
-            {item.role}
-          </Chip>
-        ),
-        header: "Role",
-        id: "role",
-        minWidth: 160,
-      },
-      {
-        accessorKey: "customers",
-        allowsSorting: true,
-        cell: (item) => (
-          <span className="text-foreground tabular-nums text-sm">
-            {item.customers} {item.customers === 1 ? "customer" : "customers"}
-          </span>
-        ),
-        header: "Customers",
-        id: "customers",
-        minWidth: 140,
-      },
-      {
-        accessorKey: "status",
-        cell: (item) => (
-          <Chip
-            color={
-              item.status === "Active"
-                ? "success"
-                : item.status === "Invited"
-                  ? "warning"
-                  : "danger"
-            }
-            size="sm"
-            variant="soft"
-          >
-            {item.status}
-          </Chip>
-        ),
-        header: "Status",
-        id: "status",
-        minWidth: 110,
-      },
-      {
-        accessorKey: "lastActive",
-        cell: (item) => <span className="text-muted text-xs">{item.lastActive}</span>,
-        header: "Last active",
-        id: "lastActive",
-        minWidth: 140,
-      },
-      {
-        align: "end",
-        cell: (item) => (
-          <div className="flex items-center justify-end gap-0.5">
-            <IconButton
-              label="Edit"
+          ),
+          header: "Member",
+          id: "name",
+          isRowHeader: true,
+          minWidth: 260,
+        },
+        {
+          accessorKey: "role",
+          allowsSorting: true,
+          cell: (item) => (
+            <Chip color={TEAM_ROLE_COLOR[item.role]} size="sm" variant="soft">
+              {item.role}
+            </Chip>
+          ),
+          header: "Role",
+          id: "role",
+          minWidth: 160,
+        },
+        {
+          accessorKey: "customers",
+          allowsSorting: true,
+          cell: (item) => (
+            <span className="text-foreground tabular-nums text-sm">
+              {item.customers} {item.customers === 1 ? "customer" : "customers"}
+            </span>
+          ),
+          header: "Customers",
+          id: "customers",
+          minWidth: 140,
+        },
+        {
+          accessorKey: "status",
+          cell: (item) => (
+            <Chip
+              color={
+                item.status === "Active"
+                  ? "success"
+                  : item.status === "Invited"
+                    ? "warning"
+                    : "danger"
+              }
               size="sm"
-              variant="tertiary"
-              onPress={() => act(item, "Edit")}
+              variant="soft"
             >
-              <Pencil className="size-4" />
-            </IconButton>
-            <IconButton
-              label="Remove"
-              size="sm"
-              variant="danger-soft"
-              onPress={() => notifySuccess(`Removed ${item.name} from the team`)}
-            >
-              <TrashBin className="size-4" />
-            </IconButton>
-            <IconButton
-              label="More"
-              size="sm"
-              variant="tertiary"
-              onPress={() => act(item, "More options")}
-            >
-              <EllipsisVertical className="size-4" />
-            </IconButton>
-          </div>
-        ),
-        header: "Actions",
-        id: "actions",
-        minWidth: 140,
-      },
-    ];
+              {item.status}
+            </Chip>
+          ),
+          header: "Status",
+          id: "status",
+          minWidth: 110,
+        },
+        {
+          accessorKey: "lastActive",
+          cell: (item) => <span className="text-muted text-xs">{item.lastActive}</span>,
+          header: "Last active",
+          id: "lastActive",
+          minWidth: 140,
+        },
+        {
+          align: "end",
+          cell: (item) => (
+            <div className="flex items-center justify-end gap-0.5">
+              <IconButton
+                label="Edit"
+                size="sm"
+                variant="tertiary"
+                onPress={() => act(item, "Edit")}
+              >
+                <Pencil className="size-4" />
+              </IconButton>
+              <IconButton
+                label="Remove"
+                size="sm"
+                variant="danger-soft"
+                isDisabled={deletingId !== null}
+                onPress={() => handleRemoveTeammate(item.id, item.name)}
+              >
+                <TrashBin className="size-4" />
+              </IconButton>
+              <IconButton
+                label="More"
+                size="sm"
+                variant="tertiary"
+                onPress={() => act(item, "More options")}
+              >
+                <EllipsisVertical className="size-4" />
+              </IconButton>
+            </div>
+          ),
+          header: "Actions",
+          id: "actions",
+          minWidth: 140,
+        },
+      ];
     },
-    [],
+    [deletingId],
   );
 
   const isEmpty = members.length === 0;
@@ -262,7 +286,9 @@ export function WhiteLabelTeamPage({log, members}: WhiteLabelTeamPageProps) {
                     <span className="text-muted">{entry.action}</span> {entry.target}
                   </span>
                 </div>
-                <span className="text-muted text-xs">{entry.timestamp}</span>
+                <span className="text-muted text-xs">
+                  {new Date(entry.timestamp).toLocaleString()}
+                </span>
               </div>
             ))
           )}

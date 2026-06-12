@@ -2,6 +2,7 @@
 
 import {ArrowRightFromSquare, Check, PlugWire, ShieldCheck} from "@gravity-ui/icons";
 import {Button, Card, Chip} from "@heroui/react";
+import {useState} from "react";
 
 import type {AgencyData} from "../../server/queries/platform";
 import {PageToolbar} from "../../widgets/white-label/page-toolbar";
@@ -12,11 +13,30 @@ export interface PlatformAdminDashboardPageProps {
 }
 
 export function PlatformAdminDashboardPage({agencies, totalMrr}: PlatformAdminDashboardPageProps) {
+  const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
   
-  const handleImpersonate = (agencyId: string) => {
-    // In a real implementation, this would trigger an API call to swap the JWT session token
-    console.log("Impersonating agency:", agencyId);
-    alert(`Swapping session token to Impersonate Agency: ${agencyId}`);
+  const handleImpersonate = async (agencyId: string) => {
+    setImpersonatingId(agencyId);
+    try {
+      const res = await fetch("/api/admin/impersonate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({agencyId}),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        window.location.href = "/white-label";
+      } else {
+        alert(data.error?.message || "Failed to impersonate agency");
+        setImpersonatingId(null);
+      }
+    } catch (err) {
+      console.error("Impersonation error:", err);
+      alert("An unexpected error occurred during impersonation");
+      setImpersonatingId(null);
+    }
   };
 
   return (
@@ -121,10 +141,15 @@ export function PlatformAdminDashboardPage({agencies, totalMrr}: PlatformAdminDa
                   <Button 
                     size="sm" 
                     variant="tertiary"
+                    isDisabled={impersonatingId !== null}
                     onPress={() => handleImpersonate(agency.id)}
                   >
-                    <ArrowRightFromSquare className="size-4" />
-                    Impersonate
+                    {impersonatingId === agency.id ? (
+                      <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    ) : (
+                      <ArrowRightFromSquare className="size-4" />
+                    )}
+                    {impersonatingId === agency.id ? "Switching…" : "Impersonate"}
                   </Button>
                 </div>
               </div>

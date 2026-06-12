@@ -22,6 +22,7 @@ import {
 import {serializeCustomer, type Customer} from "../db/schemas/customers";
 import {serializeInvoiceAgency, type InvoiceAgency} from "../db/schemas/invoices";
 import {serializeKeyword, type Keyword} from "../db/schemas/keywords";
+import {serializeCompetitor, type Competitor} from "../db/schemas/competitors";
 import {
   serializeOnboardingFlow,
   serializeOnboardingStep,
@@ -82,6 +83,15 @@ export async function listAgencyKeywords(opts: AgencyScope): Promise<Keyword[]> 
   const docs = await c.find({agencyOrgId: opts.agencyOrgId}).limit(500).toArray();
 
   return docs.map(serializeKeyword);
+}
+
+// ─── Competitors ───────────────────────────────────────────────────────────
+
+export async function listCompetitors(opts: AgencyScope): Promise<Competitor[]> {
+  const c = await collections.competitors();
+  const docs = await c.find({agencyOrgId: opts.agencyOrgId}).toArray();
+
+  return docs.map(serializeCompetitor);
 }
 
 // ─── Social posts (agency) ─────────────────────────────────────────────────
@@ -288,4 +298,20 @@ const HEX24 = /^[0-9a-fA-F]{24}$/;
 
 function isValidId(id: string): boolean {
   return HEX24.test(id);
+}
+
+export async function listWhiteLabelerSocialAccounts(opts: AgencyScope) {
+  const {siteProjectCollections} = await import("@/server/site-projects/collections");
+  const {idToString} = await import("../db/schemas/_helpers");
+  const c = await siteProjectCollections.whiteLabelerSocialAccounts();
+  const docs = await c.find({whiteLabelerId: opts.agencyOrgId, isActive: true}).toArray();
+  return docs.map((doc) => ({
+    id: idToString(doc._id),
+    whiteLabelerId: doc.whiteLabelerId,
+    outstandAccountId: doc.outstandAccountId,
+    provider: doc.provider,
+    displayName: doc.displayName,
+    isActive: doc.isActive,
+    connectedByUserId: doc.connectedByUserId,
+  }));
 }

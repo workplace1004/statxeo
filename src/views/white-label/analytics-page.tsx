@@ -103,18 +103,44 @@ export function WhiteLabelAnalyticsPage() {
               variant="tertiary"
               onPress={() => {
                 if (!data) return;
-                const rows = [
-                  "metric,value",
-                  `Total Ad Spend,${data.kpis.totalSpend}`,
-                  `Active Campaigns,${data.kpis.activeCampaigns}`,
-                  `Total Customers,${data.kpis.totalCustomers}`,
-                  `Posts Published,${data.kpis.publishedPosts}`,
-                  `Impressions,${data.kpis.totalImpressions}`,
-                  `Clicks,${data.kpis.totalClicks}`,
-                  `Conversions,${data.kpis.totalConversions}`,
-                  `CTR,${data.kpis.ctr}%`,
-                ].join("\n");
-                downloadCsv(`analytics-${range}.csv`, rows);
+                const csvRows = [
+                  ["Category", "Metric / Date / Channel", "Value / Spend"],
+                  ["KPI", "Total Ad Spend", String(data.kpis.totalSpend)],
+                  ["KPI", "Active Campaigns", String(data.kpis.activeCampaigns)],
+                  ["KPI", "Total Customers", String(data.kpis.totalCustomers)],
+                  ["KPI", "Posts Published", String(data.kpis.publishedPosts)],
+                  ["KPI", "Impressions", String(data.kpis.totalImpressions)],
+                  ["KPI", "Clicks", String(data.kpis.totalClicks)],
+                  ["KPI", "Conversions", String(data.kpis.totalConversions)],
+                  ["KPI", "CTR", `${data.kpis.ctr}%`],
+                  ["KPI", "Completed Workflows", String(data.kpis.completedWorkflows)],
+                ];
+
+                if (data.charts.spendTrend && data.charts.spendTrend.length > 0) {
+                  data.charts.spendTrend.forEach((trend) => {
+                    csvRows.push(["Spend Trend", trend.date, String(trend.spend)]);
+                  });
+                }
+
+                if (data.charts.channelSplit && data.charts.channelSplit.length > 0) {
+                  data.charts.channelSplit.forEach((channel) => {
+                    csvRows.push(["Channel Split", channel.name, String(channel.value)]);
+                  });
+                }
+
+                const csvContent = csvRows
+                  .map((row) =>
+                    row
+                      .map((val) => {
+                        const raw = val == null ? "" : String(val);
+                        if (/[",\n\r]/.test(raw)) return `"${raw.replace(/"/g, '""')}"`;
+                        return raw;
+                      })
+                      .join(","),
+                  )
+                  .join("\n");
+
+                downloadCsv(`analytics-${range}.csv`, csvContent);
                 notifySuccess(`Exported analytics snapshot (${range})`);
               }}
             >

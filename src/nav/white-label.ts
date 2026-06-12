@@ -13,6 +13,7 @@ import {
   Palette,
   PersonPlus,
   Persons,
+  PlugWire,
   Rocket,
 } from "@gravity-ui/icons";
 
@@ -38,6 +39,7 @@ export const WHITE_LABEL_ACCOUNT: AccountConfig = {
     {href: "/white-label/websites", icon: Display, label: "Websites"},
     {href: "/white-label/seo", icon: Magnifier, label: "SEO / XEO"},
     {href: "/white-label/social", icon: Megaphone, label: "Social Engine"},
+    {href: "/white-label/integrations", icon: PlugWire, label: "Integrations"},
     {badge: "New", href: "/white-label/automation", icon: Rocket, label: "Automation"},
     {href: "/white-label/campaigns", icon: ChartLine, label: "Ad Campaigns"},
     {href: "/white-label/analytics", icon: ChartColumn, label: "Analytics"},

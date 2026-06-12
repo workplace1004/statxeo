@@ -4,7 +4,8 @@ import type {FaqItem, KnowledgeArticle} from "../../server/db/schemas/support-ti
 import type {ComponentType} from "react";
 
 import {ArrowRightFromSquare, Book, Comment, LifeRing, Sparkles, Video} from "@gravity-ui/icons";
-import {Accordion, Card, Link} from "@heroui/react";
+import {Accordion, Card, Link, SearchField} from "@heroui/react";
+import {useMemo, useState} from "react";
 
 import {PageToolbar} from "../../widgets/white-label/page-toolbar";
 
@@ -48,6 +49,16 @@ export interface WhiteLabelHelpPageProps {
 }
 
 export function WhiteLabelHelpPage({articles, faqs}: WhiteLabelHelpPageProps) {
+  const [search, setSearch] = useState("");
+
+  const filteredFaqs = useMemo(() => {
+    if (!search.trim()) return faqs;
+    const q = search.toLowerCase();
+    return faqs.filter(
+      (faq) => faq.question.toLowerCase().includes(q) || faq.answer.toLowerCase().includes(q)
+    );
+  }, [faqs, search]);
+
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 pb-10 pt-4">
       <PageToolbar
@@ -63,7 +74,7 @@ export function WhiteLabelHelpPage({articles, faqs}: WhiteLabelHelpPageProps) {
       </div>
 
       <Card className="rounded-2xl">
-        <Card.Header className="flex-row items-center justify-between">
+        <Card.Header className="flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="bg-accent-soft text-accent flex size-8 items-center justify-center rounded-xl">
               <Sparkles className="size-4" />
@@ -75,15 +86,27 @@ export function WhiteLabelHelpPage({articles, faqs}: WhiteLabelHelpPageProps) {
               </Card.Description>
             </div>
           </div>
+          <SearchField
+            aria-label="Search FAQs"
+            className="w-full sm:w-[220px]"
+            name="faqs-search"
+            onChange={setSearch}
+          >
+            <SearchField.Group>
+              <SearchField.SearchIcon />
+              <SearchField.Input placeholder="Search FAQs…" />
+              <SearchField.ClearButton />
+            </SearchField.Group>
+          </SearchField>
         </Card.Header>
         <Card.Content>
-          {faqs.length === 0 ? (
+          {filteredFaqs.length === 0 ? (
             <p className="text-muted py-6 text-center text-sm">
-              No FAQs published yet. Reach out to partner support for help.
+              {search.trim() ? "No matching FAQs found." : "No FAQs published yet. Reach out to partner support for help."}
             </p>
           ) : (
             <Accordion className="w-full">
-              {faqs.map((faq, index) => (
+              {filteredFaqs.map((faq, index) => (
                 <Accordion.Item key={faq.id} id={`faq-${index}`}>
                   <Accordion.Heading>
                     <Accordion.Trigger>
@@ -159,3 +182,4 @@ function HelpLinkCard({link}: {link: HelpLink}) {
     </Card>
   );
 }
+

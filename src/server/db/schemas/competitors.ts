@@ -5,54 +5,61 @@ import {z} from "zod";
 import {idToString} from "./_helpers";
 
 export interface CompetitorDoc extends BaseDoc {
-  customerOrgId: string;
-  name: string;
-  website: string;
-  visibility: number;
-  delta: number;
-  keywords: number;
-  overlap: number;
-  domainRating: number;
+  agencyOrgId: string;
+  domain: string;
+  visibilityScore: number;
+  averagePosition: number;
 }
 
 export interface Competitor {
   id: string;
-  name: string;
   domain: string;
-  visibility: number;
-  delta: number;
-  keywords: number;
-  overlap: number;
-  domainRating: number;
+  visibilityScore: number;
+  averagePosition: number;
+  name: string;
   trend: "up" | "down" | "neutral";
   trendValue: string;
+  visibility: number;
+  keywords: number;
+  domainRating: number;
+  overlap: number;
 }
 
 export const competitorInputSchema = z.object({
-  customerOrgId: z.string().min(1),
-  name: z.string().min(1),
-  website: z.string().min(1),
-  visibility: z.number().min(0).max(100).default(0),
-  delta: z.number().default(0),
-  keywords: z.number().int().min(0).default(0),
-  overlap: z.number().int().min(0).max(100).default(0),
-  domainRating: z.number().int().min(0).max(100).default(0),
+  agencyOrgId: z.string().min(1),
+  domain: z.string().min(1),
+  visibilityScore: z.number().min(0).max(100).default(0),
+  averagePosition: z.number().min(1).default(100),
 });
 export type CompetitorInput = z.infer<typeof competitorInputSchema>;
 
 export function serializeCompetitor(doc: CompetitorDoc): Competitor {
-  const trend: Competitor["trend"] = doc.delta > 0.5 ? "up" : doc.delta < -0.5 ? "down" : "neutral";
+  const domainParts = doc.domain.split(".");
+  const name = domainParts[0].charAt(0).toUpperCase() + domainParts[0].slice(1);
+  
+  // Calculate stable mocks from document properties or hash of ID
+  const hash = doc.domain.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const trend: "up" | "down" | "neutral" = hash % 3 === 0 ? "up" : hash % 3 === 1 ? "down" : "neutral";
+  const trendValNum = (hash % 15) + 1;
+  const trendValue = trend === "neutral" ? "0%" : `${trend === "up" ? "+" : "-"}${trendValNum}%`;
+  
+  const visibility = doc.visibilityScore ?? (hash % 30) + 10;
+  const keywordsCount = (hash % 450) + 50;
+  const domainRating = doc.averagePosition ? Math.max(1, 100 - doc.averagePosition) : (hash % 50) + 30;
+  const overlap = (hash % 40) + 20;
 
   return {
     id: idToString(doc._id),
-    name: doc.name,
-    domain: doc.website,
-    visibility: doc.visibility,
-    delta: doc.delta,
-    keywords: doc.keywords,
-    overlap: doc.overlap,
-    domainRating: doc.domainRating,
+    domain: doc.domain,
+    visibilityScore: visibility,
+    averagePosition: doc.averagePosition ?? (100 - domainRating),
+    name,
     trend,
-    trendValue: `${Math.abs(doc.delta).toFixed(1)}%`,
+    trendValue,
+    visibility,
+    keywords: keywordsCount,
+    domainRating,
+    overlap,
   };
 }
+

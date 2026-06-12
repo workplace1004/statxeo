@@ -342,7 +342,7 @@ export async function signMediaUpload(
   });
 
   return {
-    uploadUrl: `/api/site-projects/${projectId}/media`,
+    uploadUrl: `/api/site-projects/${projectId}/media?storagePath=${encodeURIComponent(storagePath)}`,
     storagePath,
     expiresIn: 3600,
   };

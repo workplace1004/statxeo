@@ -338,3 +338,102 @@ Identified and resolved a role escalation vulnerability where Agency Admins coul
 - Built `src/widgets/white-label/social-post-history.tsx` to act as an immutable audit log, presenting historical engagement metrics and status labels.
 - **Outstand Webhooks**: Created `/api/webhooks/outstand/route.ts` with military-grade HMAC SHA-256 cryptographic signature validation to securely flip post status from `Awaiting Approval` or `Scheduled` to `Published` upon receiving callbacks.
 - Re-ran `npx tsc --noEmit` which executed flawlessly, ensuring the system remains completely type-safe.
+
+---
+
+### June 8, 2026: Platform Admin Impersonation Logic
+
+#### 1. Platform Admin Impersonation (God Mode)
+- **Token Swapping Backend**: Created `/api/admin/impersonate` POST endpoint. It asserts the caller has the `platform_admin` role, retrieves the target agency owner's user record, writes an audit log to `activityLog`, and issues a new session cookie for that owner.
+- **Dashboard Action Widget**: Wired up the "Impersonate" action triggers in `src/views/platform-admin/dashboard-page.tsx` with async fetch requests, loading states, and dynamic `window.location.href = "/white-label"` redirection.
+- **Verification**: Verified the backend role isolation guards and successfully ran typecheck compilation via `npx tsc --noEmit` to guarantee complete project-wide safety.
+
+---
+
+### June 9, 2026: Branding Persistence & Integrations Hub
+
+#### 1. White-Label Branding Persistence
+- **Schema Expansion**: Extended `BrandSettings` and its Zod schema validation in `src/server/db/schemas/organizations.ts` to include email customization (FromName, FromAddress, Footer, HideBranding) and login custom page fields (Headline, Subhead, BgUrl).
+- **Backend API Routes**:
+  - Created `/api/white-label/branding` (POST) to persist organization brand layouts.
+  - Created `/api/white-label/branding/domains` supporting `POST` (register pending domain), `PATCH` (DNS verification simulation to active), and `DELETE` (unregister domain).
+- **Branding View Wireup**: Refactored `src/views/white-label/branding-page.tsx` to bind fields (color palettes, custom domains, email/login settings) to database-backed component states and trigger updates via REST.
+
+#### 2. Central Integrations Hub Page
+- **Navigation & Queries**: Registered `/white-label/integrations` in the agency navigation sidebar ([white-label.ts](file:///d:/staxeo%20web/statxeo-main/src/nav/white-label.ts)). Added the `listWhiteLabelerSocialAccounts` query to retrieve active social link states from MongoDB.
+- **Integrations API Endpoints**:
+  - `/api/social/connect` (GET) generates HMAC-signed state tokens and returns Outstand connection redirects.
+  - `/api/social/accounts` (DELETE) disconnects and deletes active social credentials.
+  - `/api/integrations/ads` (POST/DELETE) updates or unsets ad managers (Meta/Google Ads tokens) on the user record.
+- **Integrations Views**: Created the page route (`src/app/white-label/integrations/page.tsx`) and the dashboard view (`src/views/white-label/integrations-page.tsx`) showing a beautiful connection manager for social providers (Facebook, Instagram, LinkedIn, YouTube, X) and ad managers.
+
+#### 3. Verification
+- **TypeScript**: Ran `npx tsc --noEmit` showing 100% type-safe compilation checks.
+
+---
+
+### June 10, 2026: Settings, Team, & Competitor Tracking Integrations
+
+#### 1. Competitor Tracking
+- **Schema & Query Integration**: Added `Competitor` database schema (`src/server/db/schemas/competitors.ts`) with custom fields like `visibility`, `keywords`, `domainRating`, `overlap`, `trend`, and `trendValue`. Added `listCompetitors` query in `src/server/queries/agency.ts`.
+- **Competitors API**: Built `/api/white-label/seo/competitors` REST endpoint supporting `GET` (list tracked domains), `POST` (add new domain with simulated metrics), and `DELETE` (remove domain).
+- **SEO Dashboards Unified**: Refactored `src/views/white-label/seo-page.tsx` using custom HeroUI `Tabs` to separate keywords and competitor tracking. Wired the dashboard and customer portal `src/views/customer/seo-page.tsx` to display real-time competitor lists, delete targets, and add domains dynamically via the overlay `AddCompetitorModal`.
+
+#### 2. Teammate Invites & Deletion
+- **Team API**: Built `/api/white-label/team` POST/DELETE endpoints to register teammate invites in the `agencyTeam` collection, write audit records to `activityLog`, and unregister users from active seats.
+- **Team Dashboard View**: Wired up [team-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/white-label/team-page.tsx) and the invite modal [invite-team-member-modal.tsx](file:///d:/staxeo%20web/statxeo-main/src/widgets/white-label/modals/invite-team-member-modal.tsx) to execute these database mutations and refresh grids instantly.
+
+#### 3. Settings Persistence
+- **Settings API**: Created `/api/white-label/settings` POST endpoint to persist general organization details (`agencyName` mapped to `name`, `timezone`, `defaultAiTone`, and `showPoweredByBadge`) in MongoDB.
+- **Settings Form View**: Bound input fields, select options, and switch toggles in [settings-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/white-label/settings-page.tsx) to database states and saved values dynamically on pressing "Save changes".
+
+#### 4. Compiler Verification
+- **TypeScript**: Executed `pnpm typecheck` successfully with zero compilation or lint errors across all client-facing and operator views.
+
+---
+
+### June 11, 2026: Phase 2 Feature Audit & UI Upgrades
+
+#### 1. Reseller Billing Stripe Integration
+- **Database Schema**: Added `stripeConnected?: boolean | null` to the `organizations` database schema ([organizations.ts](file:///d:/staxeo%20web/statxeo-main/src/server/db/schemas/organizations.ts)).
+- **Stripe Connection API**: Developed `/api/white-label/billing/stripe` POST route to toggle organization connection flags.
+- **Operator Billing View**: Integrated status indicators, loaders, and connection toggle action widgets in [billing-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/white-label/billing-page.tsx).
+
+#### 2. Automation Workflow Builder
+- **Workflow Persistence API**: Developed `/api/white-label/automation` POST route to record and instantiate custom rules in the `workflows` database collection.
+- **Workflow Creation Overlay**: Created [new-workflow-modal.tsx](file:///d:/staxeo%20web/statxeo-main/src/widgets/white-label/modals/new-workflow-modal.tsx) prompting for workflow name, descriptions, triggers, and steps.
+- **KPI Summary Wiring**: Refactored [automation-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/white-label/automation-page.tsx) to calculate Active count, total executions, success rate, and hours saved metrics dynamically.
+
+#### 3. Client Website Option Tiers
+- **Tier Configuration Schema**: Extended `sites` schema with `tier: string | null` properties in [sites.ts](file:///d:/staxeo%20web/statxeo-main/src/server/db/schemas/sites.ts).
+- **Website Action API**: Created `/api/white-label/websites/options` POST route to persist client site packages, statuses, and visual preview options.
+- **Websites Options Overlay**: Created [website-options-modal.tsx](file:///d:/staxeo%20web/statxeo-main/src/widgets/white-label/modals/website-options-modal.tsx) and wired the card action controls in [websites-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/white-label/websites-page.tsx).
+
+#### 4. Help FAQ Filter
+- **Interactive Search**: Refactored [help-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/white-label/help-page.tsx) adding real-time client-side FAQ filtering using Accordion state.
+
+#### 5. Detailed Analytics CSV Exporter
+- **Multi-Category Export**: Refactored the CSV generation button handler in [analytics-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/white-label/analytics-page.tsx) to build and download a detailed multi-table format including basic KPIs, daily spend trends, and platform channel splits.
+
+#### 6. Verification
+- **TypeScript**: Ran project-wide compilation check via `npx tsc --noEmit` completing successfully with zero type or build errors.
+
+---
+
+### June 12, 2026: Media Upload Backend Integration
+
+#### 1. Media Upload Signing Query Tokens
+- **Signed URL Enhancement**: Modified `signMediaUpload` in [service.ts](file:///d:/staxeo%20web/statxeo-main/src/server/site-projects/service.ts) to append the target asset `storagePath` as a query parameter in the returned client-facing `uploadUrl`.
+
+#### 2. Binary Media PUT Route Handler
+- **Binary Content Persistence**: Replaced the static PUT route handler in [route.ts](file:///d:/staxeo%20web/statxeo-main/src/app/api/site-projects/%5BprojectId%5D/media/route.ts) with a filesystem-based persistence engine.
+- **Security Sandboxing**: Added prefix checks requiring all `storagePath` targets to strictly start with `projects/[projectId]/media/` to mitigate path traversal exploits.
+- **Binary Writer**: Drains the request body using `request.arrayBuffer()`, converts it to a Node Buffer, recursively builds target folders, and writes the asset to the public uploads folder (`public/uploads/[storagePath]`) for rendering and consumption.
+
+#### 3. Verification
+- **TypeScript**: Executed `npx tsc --noEmit` which completed successfully with zero type errors.
+
+
+
+
+
