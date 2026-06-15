@@ -244,7 +244,7 @@ export function WhiteLabelBillingPage({invoices, organization}: WhiteLabelBillin
             <Button
               size="sm"
               variant="tertiary"
-              onPress={() => notifyInfo("Payment method setup opens in Stripe")}
+              onPress={() => notifyInfo("Payment method setup opens in secure portal")}
             >
               <Plus className="size-4" />
               Add card

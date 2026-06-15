@@ -40,7 +40,7 @@ const storyChapters = [
   {
     title: "Spin up the operator workspace",
     subtitle: "Chapter 02",
-    body: "Approved partners move through branding, Stripe Connect, domain readiness, team setup, and first-client launch without rebuilding the wheel.",
+    body: "Approved partners move through branding, billing setup, domain readiness, team setup, and first-client launch without rebuilding the wheel.",
     href: "/onboarding/white-label?mode=sign-in",
     cta: "Open portal",
     icon: Display,
@@ -73,7 +73,7 @@ const operatingSystems = [
   },
   {
     title: "Payout ledger",
-    body: "Track monthly payout inputs and connected Stripe state without relying on a private spreadsheet loop.",
+    body: "Track monthly payout inputs and connected payout state without relying on a private spreadsheet loop.",
     icon: ShieldCheck,
   },
 ] as const
@@ -88,7 +88,7 @@ const onboardingFlow = [
     detail: "Your brand identity becomes the visible operating layer.",
   },
   {
-    title: "Stripe Connect and payout setup",
+    title: "Payout ledger and details setup",
     detail: "Payment rails and payout logic land before live selling.",
   },
   {
@@ -157,7 +157,7 @@ const faqItems = [
   },
   {
     q: "What happens after I apply?",
-    a: "Applications are reviewed before provisioning. Once approved, you move through organization setup, Stripe Connect, domain checks, and team access—then first client launch.",
+    a: "Applications are reviewed before provisioning. Once approved, you move through organization setup, billing configuration, domain checks, and team access—then first client launch.",
   },
   {
     q: "Where do I sign in after I am approved?",

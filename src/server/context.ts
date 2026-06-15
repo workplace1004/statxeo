@@ -10,7 +10,7 @@ import {idToString} from "./db/schemas/_helpers";
 /**
  * Resolve the signed-in user's DB record.
  *
- * - No session     → redirect to /login (middleware should have caught this)
+ * - No session     → redirect to /login/partners (middleware should have caught this)
  * - No DB user     → redirect to onboarding (first sign-in, record not seeded)
  * - Has user       → return the doc
  *
@@ -21,7 +21,7 @@ import {idToString} from "./db/schemas/_helpers";
 async function requireCurrentUser() {
   const session = await getSession();
   if (!session) {
-    redirect("/login");
+    redirect("/login/partners");
   }
 
   const c = await collections.users();
