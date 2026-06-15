@@ -348,6 +348,21 @@ export async function signMediaUpload(
   };
 }
 
+/**
+ * Asserts that the caller has permission to upload binary media for the given
+ * project. Called by the PUT /media route after sign-upload has already
+ * committed the DB record.
+ */
+export async function assertMediaUploadAccess(
+  ctx: SiteProjectsContext,
+  projectId: string,
+) {
+  assertPermission(ctx, "media.upload");
+  const project = await findProjectById(projectId);
+  if (!project) throw notFound();
+  await assertProjectAccess(ctx, project);
+}
+
 function sanitizeUploadFilename(filename: string): string {
   const trimmed = filename.trim();
   const normalized = trimmed.replace(/[^A-Za-z0-9._ -]/g, "_").replace(/\s+/g, " ");

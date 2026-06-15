@@ -58,11 +58,9 @@ export async function POST(request: NextRequest) {
     );
 
     if (updateResult.matchedCount === 0) {
-      console.warn(`[Webhook] Post with ID ${id} not found.`);
       return NextResponse.json({error: "Post not found"}, {status: 404});
     }
 
-    console.log(`[Webhook] Successfully updated post ${id} to status ${status}`);
     return NextResponse.json({ok: true});
   } catch (error: any) {
     console.error("[POST /api/webhooks/outstand] error:", error);

@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const {orgId} = ctx!;
 
     const body = await request.json();
-    const {paymentConnected} = body;
+    const {stripeConnected} = body;
 
     const {ObjectId} = await import("mongodb");
     const orgsCol = await collections.organizations();
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       {_id: new ObjectId(orgId)},
       {
         $set: {
-          paymentConnected: !!paymentConnected,
+          stripeConnected: !!stripeConnected,
           updatedAt: new Date(),
         },
       }
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ok: true});
   } catch (err: any) {
-    console.error("[POST /api/white-label/billing/payment-status] error:", err);
+    console.error("[POST /api/white-label/billing/stripe] error:", err);
     return NextResponse.json(
       {ok: false, error: {code: "INTERNAL_ERROR", message: err.message || "Internal server error"}},
       {status: 500}

@@ -32,6 +32,7 @@ export interface OrganizationDoc extends BaseDoc {
   timezone?: string | null;
   defaultAiTone?: string | null;
   showPoweredByBadge?: boolean | null;
+  stripeConnected?: boolean | null;
 }
 
 export interface Organization {
@@ -43,6 +44,7 @@ export interface Organization {
   timezone: string | null;
   defaultAiTone: string | null;
   showPoweredByBadge: boolean | null;
+  stripeConnected: boolean | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -72,6 +74,7 @@ export const organizationInputSchema = z.object({
   timezone: z.string().nullable().optional(),
   defaultAiTone: z.string().nullable().optional(),
   showPoweredByBadge: z.boolean().nullable().optional(),
+  stripeConnected: z.boolean().nullable().optional(),
 });
 export type OrganizationInput = z.infer<typeof organizationInputSchema>;
 
@@ -85,6 +88,7 @@ export function serializeOrganization(doc: OrganizationDoc): Organization {
     timezone: doc.timezone ?? null,
     defaultAiTone: doc.defaultAiTone ?? null,
     showPoweredByBadge: doc.showPoweredByBadge ?? null,
+    stripeConnected: doc.stripeConnected ?? null,
     createdAt: dateToIso(doc.createdAt),
     updatedAt: dateToIso(doc.updatedAt),
   };

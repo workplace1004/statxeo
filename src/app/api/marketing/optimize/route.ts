@@ -50,7 +50,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log("[CampaignOptimizer] Running automated campaign optimization cycle...");
     const results = await optimizeActiveCampaigns();
 
     return NextResponse.json({
