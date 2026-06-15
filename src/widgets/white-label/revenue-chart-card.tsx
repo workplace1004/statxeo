@@ -74,7 +74,7 @@ export function RevenueChartCard({series}: RevenueChartCardProps) {
       <Card.Content className="flex flex-col gap-3">
         {isEmpty ? (
           <p className="text-muted py-12 text-center text-sm">
-            No revenue events yet — connect Stripe to start tracking MRR.
+            No revenue events yet — connect billing integrations to start tracking MRR.
           </p>
         ) : (
           <>

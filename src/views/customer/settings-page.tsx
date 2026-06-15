@@ -240,7 +240,7 @@ export function CustomerSettingsPage({
           {integrations.length === 0 ? (
             <div className="mt-4">
               <EmptyState
-                body="Connect Google Business, Stripe, and other tools to unlock the full picture."
+                body="Connect Google Business, billing systems, and other tools to unlock the full picture."
                 cta={{
                   label: "Browse integrations",
                   onPress: () => notifyInfo("Integration marketplace opens from Settings"),
