@@ -444,6 +444,8 @@ Identified and resolved a role escalation vulnerability where Agency Admins coul
   - `/supabase/` folder (legacy SQL migrations).
   - Root `components.json` (legacy Shadcn UI configuration file).
 - **Git Alignment**: Cleared remote PR conflicts by ensuring only active `/src` components are preserved in the git tree.
+- **Mobile App Exception**: Noted that the mobile app (`/mobile`) continues to use `@supabase/supabase-js` for its authentication and data client layer in this version, as it does not query databases natively and is managed separately from the Next.js web application migrations.
+
 
 #### 2. Stripe Connect Decommissioning
 - **Schema & Route Purges**: Removed all Stripe Connect properties (like `stripeConnected`) from MongoDB schemas in `organizations.ts` and `integrations.ts`.
