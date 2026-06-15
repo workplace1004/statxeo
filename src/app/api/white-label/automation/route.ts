@@ -22,10 +22,6 @@ export async function POST(request: NextRequest) {
     }
 
     const workflowsCol = await collections.workflows();
-    
-    // Generate simulated metrics for the new automation
-    const runsLast7Days = Math.floor(Math.random() * 25) + 5; // 5 to 30 runs
-    const successRate = 0.9 + Math.random() * 0.1; // 90% to 100%
 
     const newWorkflow = {
       agencyOrgId: orgId,
@@ -37,8 +33,8 @@ export async function POST(request: NextRequest) {
       trigger,
       steps: Number(steps) || 2,
       enabled: true,
-      runsLast7Days,
-      successRate,
+      runsLast7Days: 0,
+      successRate: null,
       actions: [],
       lastRunAt: null,
       createdAt: new Date(),

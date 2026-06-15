@@ -32,3 +32,13 @@ next-env.d.ts
 
 # turbo
 .turbo
+
+# private media uploads (never commit binary uploads to git)
+/server-uploads/
+
+# legacy agent skill directories — not part of this project
+/.claude/
+/.cline/
+
+# root-level hooks/ is a V1 leftover — real hooks live in src/
+/hooks/

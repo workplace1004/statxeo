@@ -55,16 +55,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate simulated metrics for the competitor
-    const visibilityScore = Math.floor(Math.random() * 40) + 10; // 10% - 50%
-    const averagePosition = Math.floor(Math.random() * 30) + 8;  // Rank 8 - 38
-
+    // Scores start at null — populated by the SEO data sync job when wired
     const now = new Date();
     await competitorsCol.insertOne({
       agencyOrgId: orgId,
       domain: trimmedDomain,
-      visibilityScore,
-      averagePosition,
+      visibilityScore: null,
+      averagePosition: null,
       createdAt: now,
       updatedAt: now,
     } as any);
