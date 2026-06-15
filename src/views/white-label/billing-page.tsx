@@ -24,36 +24,6 @@ export interface WhiteLabelBillingPageProps {
 
 export function WhiteLabelBillingPage({invoices, organization}: WhiteLabelBillingPageProps) {
   const invoiceState = useOverlayState();
-  const [stripeConnected, setStripeConnected] = useState(organization?.stripeConnected ?? false);
-  const [connecting, setConnecting] = useState(false);
-
-  const handleToggleStripe = async () => {
-    setConnecting(true);
-    try {
-      const res = await fetch("/api/white-label/billing/stripe", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          stripeConnected: !stripeConnected,
-        }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setStripeConnected(!stripeConnected);
-        notifySuccess(!stripeConnected ? "Stripe account connected" : "Stripe account disconnected");
-        window.location.reload();
-      } else {
-        alert(data.error?.message || "Failed to toggle Stripe Connect");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("An unexpected error occurred while toggling Stripe Connect");
-    } finally {
-      setConnecting(false);
-    }
-  };
 
   const columns = useMemo<DataGridColumn<InvoiceAgency>[]>(
     () => [
@@ -302,36 +272,7 @@ export function WhiteLabelBillingPage({invoices, organization}: WhiteLabelBillin
           </Card.Content>
         </Card>
 
-        <Card className="rounded-2xl">
-          <Card.Header className="flex-row items-center justify-between">
-            <div className="flex flex-col gap-0.5">
-              <Card.Title className="text-base">Stripe Connect</Card.Title>
-              <Card.Description>Enable client billing.</Card.Description>
-            </div>
-            <Chip color={stripeConnected ? "success" : "default"} size="sm" variant="soft">
-              {stripeConnected ? "Connected" : "Not Linked"}
-            </Chip>
-          </Card.Header>
-          <Card.Content className="flex flex-col gap-2 py-2">
-            <p className="text-muted text-xs leading-normal">
-              Accept credit cards, set up subscription tiers, and automate payments to your bank account.
-            </p>
-          </Card.Content>
-          <Card.Footer>
-            <Button
-              className="w-full"
-              size="sm"
-              variant={stripeConnected ? "danger-soft" : "primary"}
-              isDisabled={connecting}
-              onPress={handleToggleStripe}
-            >
-              {connecting && (
-                <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent mr-1" />
-              )}
-              {stripeConnected ? "Disconnect Stripe" : "Link Stripe Account"}
-            </Button>
-          </Card.Footer>
-        </Card>
+
       </div>
 
       {isEmpty ? (

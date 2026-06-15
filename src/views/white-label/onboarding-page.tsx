@@ -436,7 +436,6 @@ function IntegrationsStep({
     {key: "ga4", name: "Google Analytics 4"},
     {key: "ads", name: "Google Ads"},
     {key: "meta", name: "Meta Business Suite"},
-    {key: "stripe", name: "Stripe"},
   ] as const;
 
   return (
