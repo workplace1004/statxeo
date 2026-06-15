@@ -18,7 +18,7 @@ export function ProfileScreen() {
     <View style={styles.screen}>
       <Text style={styles.heading}>Profile</Text>
       <Text style={styles.label}>Signed in as</Text>
-      <Text style={styles.value}>{session?.user.email ?? "Unknown user"}</Text>
+      <Text style={styles.value}>{session?.email ?? "Unknown user"}</Text>
       <Pressable style={styles.button} onPress={onSignOut}>
         <Text style={styles.buttonText}>Sign Out</Text>
       </Pressable>

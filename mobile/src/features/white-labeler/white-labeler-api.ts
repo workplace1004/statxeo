@@ -1,5 +1,3 @@
-import { Session } from "@supabase/supabase-js";
-
 import { apiRequest } from "../../lib/api-client";
 
 export type WhiteLabelerOverview = {
@@ -24,10 +22,10 @@ export type WhiteLabelerClient = {
   active_site_count: number;
 };
 
-export async function fetchWhiteLabelerOverview(session: Session | null) {
-  return apiRequest<WhiteLabelerOverview>("/api/white-labeler/overview", { session });
+export async function fetchWhiteLabelerOverview(token: string | null) {
+  return apiRequest<WhiteLabelerOverview>("/api/white-labeler/overview", { token });
 }
 
-export async function fetchWhiteLabelerClients(session: Session | null) {
-  return apiRequest<{ clients: WhiteLabelerClient[] }>("/api/white-labeler/clients?limit=50", { session });
+export async function fetchWhiteLabelerClients(token: string | null) {
+  return apiRequest<{ clients: WhiteLabelerClient[] }>("/api/white-labeler/clients?limit=50", { token });
 }

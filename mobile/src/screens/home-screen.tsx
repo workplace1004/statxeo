@@ -18,7 +18,7 @@ export function HomeScreen() {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchWhiteLabelerOverview(session);
+      const data = await fetchWhiteLabelerOverview(session?.token ?? null);
       setOverview(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load overview.");

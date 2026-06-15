@@ -1,5 +1,3 @@
-import { Session } from "@supabase/supabase-js";
-
 import { env } from "../config/env";
 
 type JsonBody = Record<string, unknown> | undefined;
@@ -28,15 +26,15 @@ export class ApiError extends Error {
 
 export async function apiRequest<T>(
   path: string,
-  options?: { method?: "GET" | "POST" | "PATCH" | "DELETE"; body?: JsonBody; session?: Session | null },
+  options?: { method?: "GET" | "POST" | "PATCH" | "DELETE"; body?: JsonBody; token?: string | null },
 ): Promise<T> {
   const headers: Record<string, string> = {
     Accept: "application/json",
     "Content-Type": "application/json",
   };
 
-  if (options?.session?.access_token) {
-    headers.Authorization = `Bearer ${options.session.access_token}`;
+  if (options?.token) {
+    headers.Authorization = `Bearer ${options.token}`;
   }
 
   const response = await fetch(`${env.siteUrl}${path}`, {

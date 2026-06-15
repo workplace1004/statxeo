@@ -14,7 +14,7 @@ export function ClientsScreen() {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchWhiteLabelerClients(session);
+      const data = await fetchWhiteLabelerClients(session?.token ?? null);
       setClients(data.clients);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load clients.");
