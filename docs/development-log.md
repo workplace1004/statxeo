@@ -433,6 +433,27 @@ Identified and resolved a role escalation vulnerability where Agency Admins coul
 #### 3. Verification
 - **TypeScript**: Executed `npx tsc --noEmit` which completed successfully with zero type errors.
 
+---
+
+### June 15, 2026: Legacy Purge & Stripe Connect Decommissioning
+
+#### 1. Complete Legacy Codebase Purge
+- **Legacy V1 Folders Deleted**: Formally removed and deleted all legacy root directories from git tracking, including:
+  - `/components/` folder (the legacy Shadcn UI components).
+  - `/lib/` root folder (obsolete V1 helper functions and demo seed scripts that referenced Supabase).
+  - `/supabase/` folder (legacy SQL migrations).
+  - Root `components.json` (legacy Shadcn UI configuration file).
+- **Git Alignment**: Cleared remote PR conflicts by ensuring only active `/src` components are preserved in the git tree.
+
+#### 2. Stripe Connect Decommissioning
+- **Schema & Route Purges**: Removed all Stripe Connect properties (like `stripeConnected`) from MongoDB schemas in `organizations.ts` and `integrations.ts`.
+- **API Deletion**: Deleted the API route `src/app/api/white-label/billing/stripe` and related handlers.
+- **Frontend Refactoring**: Removed all Stripe payment setup actions, status badges, buttons, and integration checklists from the billing pages (`billing-page.tsx`) and onboarding view (`onboarding-page.tsx`), transitioning them to generic reseller layouts.
+
+#### 3. Verification
+- **Compilation Check**: Executed `npx tsc --noEmit` and confirmed zero compilation or type-safety errors.
+
+
 
 
 

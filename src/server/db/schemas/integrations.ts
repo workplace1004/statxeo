@@ -7,7 +7,6 @@ import {idToString} from "./_helpers";
 export const INTEGRATION_KINDS = [
   "gbp",
   "ga4",
-  "stripe",
   "yelp",
   "facebook",
   "statxt",
@@ -22,7 +21,6 @@ export type IntegrationStatus = (typeof INTEGRATION_STATUSES)[number];
 
 export const INTEGRATION_CATEGORIES = [
   "Listings",
-  "Payments",
   "Comms",
   "Analytics",
   "Reviews",

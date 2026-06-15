@@ -131,7 +131,7 @@ export function CustomerBillingPage({invoices}: CustomerBillingPageProps) {
             </div>
           </Card.Content>
           <Card.Footer>
-            <Button size="sm" onPress={() => notifyInfo("Plan selection opens in Stripe Checkout")}>
+            <Button size="sm" onPress={() => notifyInfo("Plan selection opens in checkout portal")}>
               Choose a plan
             </Button>
           </Card.Footer>
@@ -146,7 +146,7 @@ export function CustomerBillingPage({invoices}: CustomerBillingPageProps) {
             <Button
               size="sm"
               variant="tertiary"
-              onPress={() => notifyInfo("Payment method setup opens in Stripe")}
+              onPress={() => notifyInfo("Payment method setup opens in secure portal")}
             >
               Add payment method
             </Button>
