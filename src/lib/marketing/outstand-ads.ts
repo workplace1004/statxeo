@@ -55,10 +55,10 @@ export class OutstandAdsClient {
       // Mock performance data based on channel
       const isGoogle = channel === "google";
       return {
-        impressions: Math.floor(Math.random() * (isGoogle ? 8000 : 5000)) + 1000,
-        clicks: Math.floor(Math.random() * (isGoogle ? 300 : 200)) + 20,
-        spend: Math.floor(Math.random() * (isGoogle ? 60 : 50)) + 10,
-        conversions: Math.floor(Math.random() * 15),
+        impressions: 0,
+        clicks: 0,
+        spend: 0,
+        conversions: 0,
       };
     }
 

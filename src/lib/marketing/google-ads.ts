@@ -31,7 +31,7 @@ export class GoogleAdsClient {
     if (this.isSandbox) {
       console.log("[GoogleAds - Mock] Creating campaign:", params.name);
       return {
-        id: `customers/1234567890/campaigns/${Math.floor(Math.random() * 10000000)}`,
+        id: `customers/1234567890/campaigns/0`,
         name: params.name,
         status: "PAUSED",
         dailyBudgetMicroAmount: params.dailyBudget * 1_000_000,
@@ -85,7 +85,7 @@ export class GoogleAdsClient {
     if (this.isSandbox) {
       console.log("[GoogleAds - Mock] Creating ad for adGroup:", params.adGroupId);
       return {
-        id: `${params.adGroupId}/adGroupAds/${Math.floor(Math.random() * 10000000)}`,
+        id: `${params.adGroupId}/adGroupAds/0`,
         headline: params.headline,
         description: params.description,
         finalUrls: params.finalUrls,
@@ -170,10 +170,10 @@ export class GoogleAdsClient {
   async getInsights(campaignId: string) {
     if (this.isSandbox) {
       return {
-        impressions: Math.floor(Math.random() * 8000) + 1200,
-        clicks: Math.floor(Math.random() * 300) + 30,
-        spend: Math.floor(Math.random() * 60) + 12,
-        conversions: Math.floor(Math.random() * 15),
+        impressions: 0,
+        clicks: 0,
+        spend: 0,
+        conversions: 0,
       };
     }
 

@@ -69,8 +69,8 @@ export async function optimizeActiveCampaigns(): Promise<any[]> {
         for (const creative of activeCreatives) {
           creative.spend += spend / activeCreatives.length;
           // Simulate some variations to test optimization
-          if (creative.ctr === 0) creative.ctr = Math.random() * 0.05 + 0.01; // 1% to 6%
-          if (creative.conversionRate === 0) creative.conversionRate = Math.random() * 0.1;
+          if (creative.ctr === 0) creative.ctr = 0;
+          if (creative.conversionRate === 0) creative.conversionRate = 0;
 
           if (!highestCtrCreative || creative.ctr > highestCtrCreative.ctr) {
             highestCtrCreative = creative;
