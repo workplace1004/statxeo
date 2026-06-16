@@ -32,7 +32,7 @@ export class MetaAdsClient {
     if (this.isSandbox) {
       console.log("[MetaAds - Mock] Creating campaign:", params.name);
       return {
-        id: `act_mock_campaign_${Math.floor(Math.random() * 10000000)}`,
+        id: `act_mock_campaign_0`,
         name: params.name,
         status: "PAUSED",
         daily_budget: params.dailyBudget,
@@ -75,7 +75,7 @@ export class MetaAdsClient {
     if (this.isSandbox) {
       console.log("[MetaAds - Mock] Creating creative:", params.name);
       return {
-        id: `mock_creative_${Math.floor(Math.random() * 10000000)}`,
+        id: `mock_creative_0`,
         name: params.name,
         title: params.headline,
         body: params.body,
@@ -150,10 +150,10 @@ export class MetaAdsClient {
   async getInsights(campaignId: string) {
     if (this.isSandbox) {
       return {
-        impressions: Math.floor(Math.random() * 5000) + 1000,
-        clicks: Math.floor(Math.random() * 200) + 20,
-        spend: Math.floor(Math.random() * 50) + 10,
-        conversions: Math.floor(Math.random() * 10),
+        impressions: 0,
+        clicks: 0,
+        spend: 0,
+        conversions: 0,
       };
     }
 
