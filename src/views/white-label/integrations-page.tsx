@@ -322,36 +322,12 @@ export function WhiteLabelIntegrationsPage({
                   <span className="font-semibold text-sm">Meta Ads Manager</span>
                   <span className="text-xs text-default-400">Automate Facebook & Instagram campaigns.</span>
                 </div>
-                {metaAdsConnected && (
-                  <Chip color="success" size="sm" variant="soft">
-                    Linked
-                  </Chip>
-                )}
               </div>
               <div className="flex justify-end pt-1">
-                {metaAdsConnected ? (
-                  <Button
-                    size="sm"
-                    variant="tertiary"
-                    isDisabled={connectingMeta}
-                    onPress={handleDisconnectMetaAds}
-                  >
-                    Disconnect
+                  <Button size="sm" isDisabled>
+                    <PlugWire className="size-4 mr-1" />
+                    Connect Meta (Coming Soon)
                   </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    isDisabled={connectingMeta}
-                    onPress={handleConnectMetaAds}
-                  >
-                    {connectingMeta ? (
-                      <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent mr-1" />
-                    ) : (
-                      <PlugWire className="size-4 mr-1" />
-                    )}
-                    Connect Meta
-                  </Button>
-                )}
               </div>
             </div>
 
@@ -362,70 +338,12 @@ export function WhiteLabelIntegrationsPage({
                   <span className="font-semibold text-sm">Google Ads Manager</span>
                   <span className="text-xs text-default-400">Optimize search campaigns.</span>
                 </div>
-                {googleAdsConnected && (
-                  <Chip color="success" size="sm" variant="soft">
-                    Linked
-                  </Chip>
-                )}
               </div>
-              {googleAdsConnected && googleAdsCustomerId && (
-                <span className="text-xs font-mono text-default-500">
-                  Customer ID: {googleAdsCustomerId}
-                </span>
-              )}
               <div className="flex justify-end pt-1">
-                {googleAdsConnected ? (
-                  <Button
-                    size="sm"
-                    variant="tertiary"
-                    isDisabled={connectingGoogle}
-                    onPress={handleDisconnectGoogleAds}
-                  >
-                    Disconnect
+                  <Button size="sm" isDisabled>
+                    <PlugWire className="size-4 mr-1" />
+                    Connect Google (Coming Soon)
                   </Button>
-                ) : (
-                  <ModalShell
-                    state={googleAdsModalState}
-                    trigger={
-                      <Button size="sm">
-                        <PlugWire className="size-4 mr-1" />
-                        Connect Google
-                      </Button>
-                    }
-                  >
-                    <Modal.Container placement="center" size="md">
-                      <Modal.Dialog>
-                        <Modal.Header>
-                          <Modal.Heading>Connect Google Ads</Modal.Heading>
-                        </Modal.Header>
-                        <Modal.Body>
-                          <TextField
-                            name="customerId"
-                            value={googleCustomerIdInput}
-                            onChange={setGoogleCustomerIdInput}
-                          >
-                            <Label>Google Ads Customer ID</Label>
-                            <Input placeholder="xxx-xxx-xxxx" />
-                          </TextField>
-                        </Modal.Body>
-                        <Modal.Footer>
-                          <Button slot="close" variant="tertiary">
-                            Cancel
-                          </Button>
-                          <Button
-                            isDisabled={!googleCustomerIdInput.trim() || connectingGoogle}
-                            onPress={handleConnectGoogleAds}
-                          >
-                            {connectingGoogle ? (
-                              <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent mr-1" />
-                            ) : null}
-                            Connect Account
-                          </Button>
-                        </Modal.Footer>
-                      </Modal.Dialog>
-                    </Modal.Container>
-                  </ModalShell>
-                )}
               </div>
             </div>
           </Card.Content>

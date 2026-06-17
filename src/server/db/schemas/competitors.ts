@@ -37,29 +37,18 @@ export function serializeCompetitor(doc: CompetitorDoc): Competitor {
   const domainParts = doc.domain.split(".");
   const name = domainParts[0].charAt(0).toUpperCase() + domainParts[0].slice(1);
   
-  // Calculate stable mocks from document properties or hash of ID
-  const hash = doc.domain.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const trend: "up" | "down" | "neutral" = hash % 3 === 0 ? "up" : hash % 3 === 1 ? "down" : "neutral";
-  const trendValNum = (hash % 15) + 1;
-  const trendValue = trend === "neutral" ? "0%" : `${trend === "up" ? "+" : "-"}${trendValNum}%`;
-  
-  const visibility = doc.visibilityScore ?? (hash % 30) + 10;
-  const keywordsCount = (hash % 450) + 50;
-  const domainRating = doc.averagePosition ? Math.max(1, 100 - doc.averagePosition) : (hash % 50) + 30;
-  const overlap = (hash % 40) + 20;
-
   return {
     id: idToString(doc._id),
     domain: doc.domain,
-    visibilityScore: visibility,
-    averagePosition: doc.averagePosition ?? (100 - domainRating),
+    visibilityScore: doc.visibilityScore ?? 0,
+    averagePosition: doc.averagePosition ?? 0,
     name,
-    trend,
-    trendValue,
-    visibility,
-    keywords: keywordsCount,
-    domainRating,
-    overlap,
+    trend: "neutral",
+    trendValue: "0%",
+    visibility: doc.visibilityScore ?? 0,
+    keywords: 0,
+    domainRating: 0,
+    overlap: 0,
   };
 }
 
