@@ -21,7 +21,7 @@ import {idToString} from "./db/schemas/_helpers";
 async function requireCurrentUser() {
   const session = await getSession();
   if (!session) {
-    redirect("/login");
+    redirect("/login/partners");
   }
 
   const c = await collections.users();

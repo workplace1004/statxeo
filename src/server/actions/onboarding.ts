@@ -7,13 +7,13 @@ import {collections} from "../db/collections";
 
 async function requireSessionAndUser() {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) redirect("/login/partners");
 
   const c = await collections.users();
   const user = await c.findOne({
     $or: [{googleSub: session.sub}, {email: session.email}],
   });
-  if (!user) redirect("/login");
+  if (!user) redirect("/login/partners");
 
   return {session, user, usersCol: c};
 }
