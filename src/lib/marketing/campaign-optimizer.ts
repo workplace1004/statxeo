@@ -89,10 +89,21 @@ export async function optimizeActiveCampaigns(): Promise<any[]> {
           lowestCtrCreative.ctr < highestCtrCreative.ctr * (1 - campaign.guardrails.autoPauseFatigueScore)
         ) {
           try {
+            const approvalsCol = await collections.approvals();
+            
+            // Check if there is an approved approval record for this creative pausing action
+            const approvedApproval = await approvalsCol.findOne({
+              orgId: campaign.whiteLabelerId,
+              payloadRef: campaign._id.toString(),
+              kind: "ads",
+              status: "approved",
+              "meta.creativeUrl": lowestCtrCreative.url,
+            });
+
             // Requirement 6: Block AI from pausing or mutating without an Approval record
             await assertCanMutateAds({
               orgId: campaign.whiteLabelerId,
-              approvalId: (campaign as any).pendingApprovalId,
+              approvalId: approvedApproval ? approvedApproval._id.toString() : undefined,
               actorEmail: "ai-optimizer@statxeo.internal",
               workflowId: campaign._id.toString(),
             });
@@ -115,7 +126,57 @@ export async function optimizeActiveCampaigns(): Promise<any[]> {
           } catch (err: any) {
             if (err instanceof AiSafetyError) {
               console.log(`[Optimizer] Fatigue detected, but no approval found. Requesting approval for campaign ${campaign._id}`);
-              // In production, this would spawn a new Approval document and notify the user
+              
+              const approvalsCol = await collections.approvals();
+              const pendingApproval = await approvalsCol.findOne({
+                orgId: campaign.whiteLabelerId,
+                payloadRef: campaign._id.toString(),
+                kind: "ads",
+                status: "pending",
+                "meta.creativeUrl": lowestCtrCreative.url,
+              });
+
+              if (!pendingApproval) {
+                const now = new Date();
+                const customersCol = await collections.customers();
+                let customerName = "Unknown Client";
+                let customerAvatar = null;
+                try {
+                  const {ObjectId} = await import("mongodb");
+                  const customer = await customersCol.findOne({_id: new ObjectId(campaign.clientOrgId)});
+                  if (customer) {
+                    customerName = customer.name;
+                    customerAvatar = customer.avatar;
+                  }
+                } catch (e) {
+                  console.error("Failed to find customer details for optimizer approval:", e);
+                }
+
+                await approvalsCol.insertOne({
+                  orgId: campaign.whiteLabelerId,
+                  customerId: campaign.clientOrgId,
+                  customerName,
+                  customerAvatar,
+                  kind: "ads",
+                  summary: `Pause underperforming creative in "${campaign.campaignName}" (${campaign.channel === "meta" ? "Meta" : "Google"} Ads) due to fatigue (CTR: ${(lowestCtrCreative.ctr * 100).toFixed(2)}%)`,
+                  count: 1,
+                  payloadRef: campaign._id.toString(),
+                  requestedBy: "ai-optimizer@statxeo.internal",
+                  requestedAt: now,
+                  dueAt: null,
+                  status: "pending",
+                  createdAt: now,
+                  updatedAt: now,
+                  meta: {
+                    actionType: "pause_creative",
+                    campaignId: campaign._id.toString(),
+                    creativeUrl: lowestCtrCreative.url,
+                    lowestCtr: lowestCtrCreative.ctr,
+                    winnerCtr: highestCtrCreative.ctr,
+                  }
+                } as any);
+              }
+
               auditLogs.push({
                 timestamp: new Date(),
                 actor: "ai" as const,

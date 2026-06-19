@@ -501,3 +501,26 @@ Identified and resolved a role escalation vulnerability where Agency Admins coul
 - **Verification Tests**: Verified the encryption/decryption functions with a dedicated test script [test-crypto.ts](file:///C:/Users/lenevo/.gemini/antigravity-ide/brain/94e36273-0cfe-482c-91ed-50e7f8a3c582/scratch/test-crypto.ts).
 - **TypeScript**: Ran project-wide type compilation checks (`pnpm typecheck`) and confirmed zero errors or warnings.
 
+---
+
+### June 19, 2026: AI Approvals Dashboard UI & Mutation Engine (Branch: feat/ai-approvals-ui)
+
+#### 1. Backend Endpoint: GET & POST `/api/white-label/approvals`
+- **Approvals Route**: Created [route.ts](file:///d:/staxeo%20web/statxeo-main/src/app/api/white-label/approvals/route.ts) with GET and POST handlers:
+  - `GET`: Returns all pending approvals scoped to the authenticated organization.
+  - `POST`: Updates approval status (`approve` or `reject`) with strict RBAC checks via `assertCan` ensuring only roles with `"manage_campaigns"` (`agency_owner`, `agency_staff`, `platform_admin`) can approve or reject recommendations.
+  - Handlers automatically apply mutations to activate campaign drafts (status `"active"`) or pause fatigued creatives (status `"paused"`), and record detailed audit logs in the workflow executions.
+
+#### 2. AI Campaign Optimizer Integration
+- **Optimizer Integration**: Updated [campaign-optimizer.ts](file:///d:/staxeo%20web/statxeo-main/src/lib/marketing/campaign-optimizer.ts) to query MongoDB and check if an `"approved"` or `"pending"` approval record already exists for the campaign and underperforming creative URL before performing mutations.
+- **Auto-Requesting Approvals**: If none exists, it automatically creates a new pending `"ads"` `Approval` record with details of the fatigued creative, logs that optimization was blocked, and skips the mutation.
+
+#### 3. Campaign Draft Integration
+- **Draft Campaigns**: Updated [route.ts](file:///d:/staxeo%20web/statxeo-main/src/app/api/marketing/campaigns/route.ts) so that when a user drafts a campaign, the POST handler automatically inserts a pending `"ads"` `Approval` record in MongoDB. This registers the new campaign launch directly into the approvals queue.
+
+#### 4. High-Fidelity Frontend Dashboard
+- **Campaigns Page UI**: Updated [campaigns-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/white-label/campaigns-page.tsx) to fetch pending approvals and render a premium **AI Optimization Queue** banner above KPIs using glassmorphism, avatar fallbacks, detailed descriptions, action loading indicators, and toast triggers.
+
+#### 5. Verification & Typecheck
+- **TypeScript**: Ran project-wide compilation checks (`pnpm typecheck`) and confirmed zero errors or warnings.
+

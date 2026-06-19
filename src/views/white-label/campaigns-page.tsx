@@ -69,11 +69,13 @@ export function WhiteLabelCampaignsPage({customers}: WhiteLabelCampaignsPageProp
 
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [approvals, setApprovals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [optimizing, setOptimizing] = useState(false);
+  const [mutatingApprovalId, setMutatingApprovalId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [platformFilter, setPlatformFilter] = useState<string | null>(null);
   const [sortDescriptor, setSortDescriptor] = useState<DataGridSortDescriptor>({
@@ -104,22 +106,60 @@ export function WhiteLabelCampaignsPage({customers}: WhiteLabelCampaignsPageProp
     },
   ]);
 
-  // Fetch campaigns and audit history
+  // Fetch campaigns, audit history, and pending approvals
   const fetchCampaigns = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const res = await fetch("/api/marketing/campaigns?audit=true");
-      if (!res.ok) {
-        throw new Error(`Failed to load campaigns: ${res.statusText}`);
+      const [campaignsRes, approvalsRes] = await Promise.all([
+        fetch("/api/marketing/campaigns?audit=true"),
+        fetch("/api/white-label/approvals"),
+      ]);
+
+      if (!campaignsRes.ok) {
+        throw new Error(`Failed to load campaigns: ${campaignsRes.statusText}`);
       }
-      const json = await res.json();
-      setCampaigns(json.data || []);
-      setAuditLogs(json.auditLogs || []);
+      const campaignsJson = await campaignsRes.ok ? await campaignsRes.json() : { data: [], auditLogs: [] };
+      setCampaigns(campaignsJson.data || []);
+      setAuditLogs(campaignsJson.auditLogs || []);
+
+      if (approvalsRes.ok) {
+        const approvalsJson = await approvalsRes.json();
+        // Only display "ads" kind approvals on this campaign page
+        const adsApprovals = (approvalsJson.approvals || []).filter(
+          (a: any) => a.kind === "ads"
+        );
+        setApprovals(adsApprovals);
+      }
     } catch (err: any) {
       console.error("Fetch campaigns error:", err);
       setError(err.message || "Failed to load marketing campaigns.");
     } finally {
       if (!silent) setLoading(false);
+    }
+  };
+
+  const handleProcessApproval = async (approvalId: string, action: "approve" | "reject") => {
+    setMutatingApprovalId(approvalId);
+    notifyInfo(`${action === "approve" ? "Approving" : "Rejecting"} recommendation...`);
+    try {
+      const res = await fetch("/api/white-label/approvals", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({approvalId, action}),
+      });
+
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.error?.message || `Failed to ${action} recommendation.`);
+      }
+
+      notifySuccess(`Recommendation successfully ${action === "approve" ? "approved & executed" : "rejected"}.`);
+      await fetchCampaigns(true);
+    } catch (err: any) {
+      console.error(`Approval process error (${action}):`, err);
+      toast.danger(err.message || `Failed to complete ${action} action.`);
+    } finally {
+      setMutatingApprovalId(null);
     }
   };
 
@@ -449,6 +489,88 @@ export function WhiteLabelCampaignsPage({customers}: WhiteLabelCampaignsPageProp
           </>
         }
       />
+
+      {/* AI Optimization Recommendations & Approvals Queue */}
+      {approvals.length > 0 && (
+        <Card className="border border-warning-200/50 bg-warning-50/5 dark:bg-warning-950/5 backdrop-blur-md rounded-2xl shadow-sm overflow-hidden">
+          <Card.Header className="flex items-center justify-between border-b border-border/40 py-3.5 px-5">
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-7 items-center justify-center rounded-lg bg-warning-500/10 text-warning-600 dark:text-warning-400">
+                <Rocket className="size-4 animate-pulse" />
+              </div>
+              <div>
+                <Card.Title className="text-sm font-semibold text-foreground leading-tight">
+                  AI Optimization Queue
+                </Card.Title>
+                <Card.Description className="text-xs text-muted leading-tight mt-0.5">
+                  Review and authorize AI-recommended actions before they are executed.
+                </Card.Description>
+              </div>
+            </div>
+            <Chip color="warning" size="sm" variant="soft" className="font-semibold text-xs">
+              {approvals.length} Actions Required
+            </Chip>
+          </Card.Header>
+          <Card.Content className="p-0 divide-y divide-border/40">
+            {approvals.map((app) => {
+              const isMutating = mutatingApprovalId === app.id;
+              return (
+                <div key={app.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between hover:bg-content2/20 transition-colors">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <Avatar className="size-9 border border-border/60">
+                      <Avatar.Image alt={app.customer} src={app.customerAvatar} />
+                      <Avatar.Fallback className="text-xs font-semibold">
+                        {app.customer
+                          ? app.customer
+                              .split(" ")
+                              .map((p: any) => p[0])
+                              .join("")
+                          : "U"}
+                      </Avatar.Fallback>
+                    </Avatar>
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-foreground text-sm font-semibold leading-tight truncate">
+                          {app.customer}
+                        </span>
+                        <Chip size="sm" variant="soft" className="h-5 text-[10px] font-bold tracking-wide uppercase px-1.5">
+                          {app.meta?.actionType === "activate_campaign" ? "Launch Campaign" : "Pause Fatigue Ad"}
+                        </Chip>
+                      </div>
+                      <p className="text-foreground/90 text-xs font-medium leading-relaxed mt-1 whitespace-pre-wrap">
+                        {app.summary}
+                      </p>
+                      <span className="text-muted text-[10px] mt-1.5">
+                        Requested: {app.requestedAt ? new Date(app.requestedAt).toLocaleString() : "just now"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2.5 sm:self-center self-end mt-2 sm:mt-0">
+                    <Button
+                      size="sm"
+                      variant="tertiary"
+                      className="text-muted-foreground hover:text-foreground text-xs font-medium"
+                      isDisabled={isMutating || mutatingApprovalId !== null}
+                      onPress={() => handleProcessApproval(app.id, "reject")}
+                    >
+                      Reject
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      className="text-xs font-semibold"
+                      isDisabled={isMutating || mutatingApprovalId !== null}
+                      onPress={() => handleProcessApproval(app.id, "approve")}
+                    >
+                      {isMutating && mutatingApprovalId === app.id ? "Authorizing..." : "Approve & Execute"}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </Card.Content>
+        </Card>
+      )}
 
       {isEmpty ? (
         <EmptyState

@@ -116,6 +116,42 @@ export async function POST(request: NextRequest) {
 
     await campaignCol.insertOne(newCampaignDoc);
 
+    // 1B. Create a pending Approval record so it appears in the approvals queue
+    const approvalsCol = await collections.approvals();
+    const customersCol = await collections.customers();
+    let customerName = "Unknown Client";
+    let customerAvatar = null;
+    try {
+      const customer = await customersCol.findOne({_id: new ObjectId(clientOrgId)});
+      if (customer) {
+        customerName = customer.name;
+        customerAvatar = customer.avatar;
+      }
+    } catch (e) {
+      console.error("Failed to find customer details for campaign draft approval:", e);
+    }
+
+    await approvalsCol.insertOne({
+      orgId: agencyOrgId,
+      customerId: clientOrgId,
+      customerName,
+      customerAvatar,
+      kind: "ads" as const,
+      summary: `Approve and launch new campaign: "${campaignName}" (${channel === "meta" ? "Meta" : "Google"} Ads, Daily Budget: $${dailyBudget})`,
+      count: 1,
+      payloadRef: campaignId.toHexString(),
+      requestedBy: session.email,
+      requestedAt: now,
+      dueAt: null,
+      status: "pending" as const,
+      createdAt: now,
+      updatedAt: now,
+      meta: {
+        actionType: "activate_campaign",
+        campaignId: campaignId.toHexString(),
+      },
+    } as any);
+
     // 2. Log workflow execution step in MongoDB
     const execCol = await collections.workflowExecutions();
     await execCol.insertOne({
