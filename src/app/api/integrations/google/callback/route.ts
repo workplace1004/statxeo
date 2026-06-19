@@ -37,11 +37,13 @@ export async function GET(request: Request) {
   }
 
   const state = parseOAuthState(stateParam);
-  if (!state) {
+  if (!state || !state.persona) {
     return NextResponse.redirect(
       new URL(buildAuthErrorRedirect(null, undefined, "invalid_state"), request.url),
     );
   }
+
+  const {persona} = state;
 
   try {
     const {accessToken} = await exchangeCodeForTokens(code);
@@ -54,11 +56,11 @@ export async function GET(request: Request) {
       email: profile.email,
       name: profile.name ?? profile.email,
       picture: profile.picture,
-      persona: state.persona,
+      persona: persona,
     });
     await setSessionCookie(sessionToken);
 
-    const destination = resolvePostAuthRedirect(state.persona, state.returnTo);
+    const destination = resolvePostAuthRedirect(persona, state.returnTo);
     const redirectUrl = new URL(destination, getAppUrl());
     redirectUrl.searchParams.set("auth", "google");
 
@@ -66,7 +68,7 @@ export async function GET(request: Request) {
   } catch {
     return NextResponse.redirect(
       new URL(
-        buildAuthErrorRedirect(state.persona, state.returnTo, "auth_failed"),
+        buildAuthErrorRedirect(persona, state.returnTo, "auth_failed"),
         request.url,
       ),
     );

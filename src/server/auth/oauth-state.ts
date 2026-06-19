@@ -1,14 +1,21 @@
 import "server-only";
 
 import {z} from "zod";
+import {randomUUID} from "node:crypto";
 
 import {GOOGLE_AUTH_PERSONAS, OAUTH_STATE_MAX_AGE_SECONDS} from "./constants";
 import {getAuthSecret, sealJson, unsealJson} from "./crypto";
 
 const oauthStateSchema = z.object({
-  persona: z.enum(GOOGLE_AUTH_PERSONAS),
+  persona: z.enum(GOOGLE_AUTH_PERSONAS).optional(),
   returnTo: z.string().optional(),
   mode: z.enum(["sign-in", "sign-up"]).optional(),
+  
+  // Fields for Ads Integration
+  integrationNetwork: z.string().optional(),
+  organizationId: z.string().optional(),
+  userId: z.string().optional(),
+  
   nonce: z.string(),
   exp: z.number(),
 });
@@ -20,7 +27,7 @@ export function createOAuthState(
 ): string {
   const payload: OAuthStatePayload = {
     ...input,
-    nonce: input.nonce ?? crypto.randomUUID(),
+    nonce: input.nonce ?? randomUUID(),
     exp: Math.floor(Date.now() / 1000) + OAUTH_STATE_MAX_AGE_SECONDS,
   };
   return sealJson(payload, getAuthSecret());
@@ -33,3 +40,4 @@ export function parseOAuthState(token: string): OAuthStatePayload | null {
   if (parsed.data.exp < Math.floor(Date.now() / 1000)) return null;
   return parsed.data;
 }
+

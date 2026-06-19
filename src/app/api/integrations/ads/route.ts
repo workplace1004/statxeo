@@ -1,91 +1,63 @@
 import {NextRequest, NextResponse} from "next/server";
-import {getAuthenticatedWhiteLabeler} from "@/server/api-context";
+import {getSession} from "@/server/auth/session";
 import {collections} from "@/server/db/collections";
+import {ObjectId} from "mongodb";
 
-export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-export async function POST(request: NextRequest) {
-  try {
-    const {ctx, errorResponse} = await getAuthenticatedWhiteLabeler(request);
-    if (errorResponse) return errorResponse;
-    const {user} = ctx!;
-
-    const body = await request.json();
-    const {network, customerId} = body;
-
-    if (network !== "meta" && network !== "google") {
-      return NextResponse.json(
-        {ok: false, error: {code: "BAD_REQUEST", message: "network must be 'meta' or 'google'"}},
-        {status: 400}
-      );
-    }
-
-    const {ObjectId} = await import("mongodb");
-    const usersCol = await collections.users();
-
-    const updateFields: any = {};
-    if (network === "meta") {
-      updateFields.metaAdsAccessToken = "mock_meta_access_token_auth_9876";
-    } else {
-      updateFields.googleAdsRefreshToken = "mock_google_refresh_token_auth_5432";
-      updateFields.googleAdsCustomerId = customerId || "123-456-7890";
-    }
-
-    await usersCol.updateOne(
-      {_id: new ObjectId(user._id)},
-      {$set: {...updateFields, updatedAt: new Date()}}
-    );
-
-    return NextResponse.json({ok: true});
-  } catch (err: any) {
-    return NextResponse.json(
-      {ok: false, error: {code: "INTERNAL_ERROR", message: err.message || "Internal server error"}},
-      {status: 500}
-    );
-  }
-}
 
 export async function DELETE(request: NextRequest) {
   try {
-    const {ctx, errorResponse} = await getAuthenticatedWhiteLabeler(request);
-    if (errorResponse) return errorResponse;
-    const {user} = ctx!;
+    const session = await getSession();
+    if (!session || session.persona !== "white-label") {
+      return NextResponse.json({error: {message: "Unauthorized"}}, {status: 401});
+    }
 
     const {searchParams} = new URL(request.url);
     const network = searchParams.get("network");
 
-    if (network !== "meta" && network !== "google") {
-      return NextResponse.json(
-        {ok: false, error: {code: "BAD_REQUEST", message: "network must be 'meta' or 'google'"}},
-        {status: 400}
-      );
+    if (!network) {
+      return NextResponse.json({error: {message: "Missing network parameter"}}, {status: 400});
     }
 
-    const {ObjectId} = await import("mongodb");
-    const usersCol = await collections.users();
+    const usersCollection = await collections.users();
+    const user = await usersCollection.findOne({email: session.email.toLowerCase()});
 
-    const unsetFields: any = {};
-    if (network === "meta") {
-      unsetFields.metaAdsAccessToken = "";
-    } else {
+    if (!user) {
+      return NextResponse.json({error: {message: "User not found"}}, {status: 404});
+    }
+
+    const unsetFields: Record<string, any> = {};
+
+    if (network === "google") {
       unsetFields.googleAdsRefreshToken = "";
       unsetFields.googleAdsCustomerId = "";
+    } else if (network === "meta") {
+      unsetFields.metaAdsAccessToken = "";
+    } else if (network === "microsoft") {
+      unsetFields.microsoftAdsRefreshToken = "";
+      unsetFields.microsoftAdsCustomerId = "";
+    } else if (network === "linkedin") {
+      unsetFields.linkedinAdsAccessToken = "";
+      unsetFields.linkedinAdsAccountId = "";
+    } else if (network === "tiktok") {
+      unsetFields.tiktokAdsAccessToken = "";
+      unsetFields.tiktokAdsAdvertiserId = "";
+    } else if (network === "amazon") {
+      unsetFields.amazonAdsRefreshToken = "";
+      unsetFields.amazonAdsProfileId = "";
+    } else {
+      return NextResponse.json({error: {message: `Unsupported network: ${network}`}}, {status: 400});
     }
 
-    await usersCol.updateOne(
-      {_id: new ObjectId(user._id)},
-      {
-        $unset: unsetFields,
-        $set: {updatedAt: new Date()},
-      }
+    await usersCollection.updateOne(
+      { _id: user._id },
+      { $unset: unsetFields }
     );
 
     return NextResponse.json({ok: true});
-  } catch (err: any) {
-    return NextResponse.json(
-      {ok: false, error: {code: "INTERNAL_ERROR", message: err.message || "Internal server error"}},
-      {status: 500}
-    );
+
+  } catch (error: any) {
+    console.error(`[API Integrations Ads DELETE] Error:`, error);
+    return NextResponse.json({error: {message: error.message || "Internal server error"}}, {status: 500});
   }
 }

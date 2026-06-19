@@ -42,6 +42,14 @@ export interface UserDoc extends BaseDoc {
   metaAdsAccessToken?: string | null;
   googleAdsRefreshToken?: string | null;
   googleAdsCustomerId?: string | null;
+  microsoftAdsRefreshToken?: string | null;
+  microsoftAdsCustomerId?: string | null;
+  linkedinAdsAccessToken?: string | null;
+  linkedinAdsAccountId?: string | null;
+  tiktokAdsAccessToken?: string | null;
+  tiktokAdsAdvertiserId?: string | null;
+  amazonAdsRefreshToken?: string | null;
+  amazonAdsProfileId?: string | null;
 }
 
 export interface User {
@@ -56,6 +64,14 @@ export interface User {
   metaAdsAccessToken?: string | null;
   googleAdsRefreshToken?: string | null;
   googleAdsCustomerId?: string | null;
+  microsoftAdsRefreshToken?: string | null;
+  microsoftAdsCustomerId?: string | null;
+  linkedinAdsAccessToken?: string | null;
+  linkedinAdsAccountId?: string | null;
+  tiktokAdsAccessToken?: string | null;
+  tiktokAdsAdvertiserId?: string | null;
+  amazonAdsRefreshToken?: string | null;
+  amazonAdsProfileId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -71,6 +87,14 @@ export const userInputSchema = z.object({
   metaAdsAccessToken: z.string().nullable().optional(),
   googleAdsRefreshToken: z.string().nullable().optional(),
   googleAdsCustomerId: z.string().nullable().optional(),
+  microsoftAdsRefreshToken: z.string().nullable().optional(),
+  microsoftAdsCustomerId: z.string().nullable().optional(),
+  linkedinAdsAccessToken: z.string().nullable().optional(),
+  linkedinAdsAccountId: z.string().nullable().optional(),
+  tiktokAdsAccessToken: z.string().nullable().optional(),
+  tiktokAdsAdvertiserId: z.string().nullable().optional(),
+  amazonAdsRefreshToken: z.string().nullable().optional(),
+  amazonAdsProfileId: z.string().nullable().optional(),
 });
 export type UserInput = z.infer<typeof userInputSchema>;
 
@@ -87,6 +111,14 @@ export function serializeUser(doc: UserDoc): User {
     metaAdsAccessToken: doc.metaAdsAccessToken,
     googleAdsRefreshToken: doc.googleAdsRefreshToken,
     googleAdsCustomerId: doc.googleAdsCustomerId,
+    microsoftAdsRefreshToken: doc.microsoftAdsRefreshToken,
+    microsoftAdsCustomerId: doc.microsoftAdsCustomerId,
+    linkedinAdsAccessToken: doc.linkedinAdsAccessToken,
+    linkedinAdsAccountId: doc.linkedinAdsAccountId,
+    tiktokAdsAccessToken: doc.tiktokAdsAccessToken,
+    tiktokAdsAdvertiserId: doc.tiktokAdsAdvertiserId,
+    amazonAdsRefreshToken: doc.amazonAdsRefreshToken,
+    amazonAdsProfileId: doc.amazonAdsProfileId,
     createdAt: dateToIso(doc.createdAt),
     updatedAt: dateToIso(doc.updatedAt),
   };

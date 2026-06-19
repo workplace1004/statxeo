@@ -29,6 +29,14 @@ export default async function Page() {
       metaAdsConnected={!!user.metaAdsAccessToken}
       googleAdsConnected={!!user.googleAdsRefreshToken}
       googleAdsCustomerId={user.googleAdsCustomerId ?? null}
+      microsoftAdsConnected={!!user.microsoftAdsRefreshToken}
+      microsoftAdsCustomerId={user.microsoftAdsCustomerId ?? null}
+      linkedinAdsConnected={!!user.linkedinAdsAccessToken}
+      linkedinAdsAccountId={user.linkedinAdsAccountId ?? null}
+      tiktokAdsConnected={!!user.tiktokAdsAccessToken}
+      tiktokAdsAdvertiserId={user.tiktokAdsAdvertiserId ?? null}
+      amazonAdsConnected={!!user.amazonAdsRefreshToken}
+      amazonAdsProfileId={user.amazonAdsProfileId ?? null}
     />
   );
 }

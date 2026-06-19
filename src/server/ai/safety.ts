@@ -122,6 +122,63 @@ export async function assertCanPublish(opts: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Guard 1B — Ads Mutation gate
+// AI must not pause ads or shift budgets without an approved Approval record
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function assertCanMutateAds(opts: {
+  orgId: string;
+  approvalId: string | undefined;
+  actorEmail: string;
+  workflowId?: string;
+}): Promise<void> {
+  const {orgId, approvalId, actorEmail, workflowId} = opts;
+
+  if (!approvalId) {
+    await writeAuditEntry({
+      workflowId,
+      actor: actorEmail,
+      action: "ai_ads_mutation_check",
+      description: `Ads mutation BLOCKED — no approvalId provided for org=${orgId}`,
+      allowed: false,
+      meta: {orgId},
+    });
+    throw new AiSafetyError(
+      "ADS_MUTATION_WITHOUT_APPROVAL",
+      `AI cannot mutate ads autonomously without a prior human approval record.`
+    );
+  }
+
+  const col = await collections.approvals();
+  const approval = await col.findOne({
+    _id: approvalId as any,
+    orgId,
+    status: "approved",
+  });
+
+  const allowed = approval !== null;
+
+  await writeAuditEntry({
+    workflowId,
+    actor: actorEmail,
+    action: "ai_ads_mutation_check",
+    description: allowed
+      ? `Ads mutation approved via approval record ${approvalId}`
+      : `Ads mutation BLOCKED — no approved record found for approvalId=${approvalId} in org=${orgId}`,
+    allowed,
+    meta: {approvalId, orgId},
+  });
+
+  if (!allowed) {
+    throw new AiSafetyError(
+      "ADS_MUTATION_WITHOUT_APPROVAL",
+      `No approved Approval record found (approvalId=${approvalId}, orgId=${orgId}). ` +
+        `AI cannot autonomously pause ads or shift budgets.`,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Guard 2 — Billing mutation gate
 // AI must not override billing — restricted to owner/admin/billing_manager
 // ─────────────────────────────────────────────────────────────────────────────

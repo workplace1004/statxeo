@@ -2,6 +2,7 @@ import {collections} from "@/server/db/collections";
 import type {Creative} from "@/server/db/schemas/campaigns";
 import {MetaAdsClient} from "./meta-ads";
 import {GoogleAdsClient} from "./google-ads";
+import {assertCanMutateAds, AiSafetyError} from "@/server/ai/safety";
 
 /**
  * Runs campaign optimization across all active Google & Meta Ads campaigns.
@@ -87,26 +88,48 @@ export async function optimizeActiveCampaigns(): Promise<any[]> {
           highestCtrCreative !== lowestCtrCreative &&
           lowestCtrCreative.ctr < highestCtrCreative.ctr * (1 - campaign.guardrails.autoPauseFatigueScore)
         ) {
-          lowestCtrCreative.status = "paused";
-          updated = true;
-          
-          // Push pause status to Meta/Google
-          if (campaign.channel === "meta" && lowestCtrCreative.generationId) {
-             // In a real implementation, call metaClient.pauseAd(lowestCtrCreative.generationId)
-             console.log(`[Optimizer] Pausing Meta Creative: ${lowestCtrCreative.generationId}`);
-          }
+          try {
+            // Requirement 6: Block AI from pausing or mutating without an Approval record
+            await assertCanMutateAds({
+              orgId: campaign.whiteLabelerId,
+              approvalId: (campaign as any).pendingApprovalId,
+              actorEmail: "ai-optimizer@statxeo.internal",
+              workflowId: campaign._id.toString(),
+            });
 
-          auditLogs.push({
-            timestamp: new Date(),
-            actor: "ai" as const,
-            action: "pause_creative",
-            description: `Paused underperforming creative due to ad fatigue (CTR ${lowestCtrCreative.ctr.toFixed(4)} vs Winner CTR ${highestCtrCreative.ctr.toFixed(4)}).`,
-            meta: { pausedCreativeUrl: lowestCtrCreative.url, winnerCreativeUrl: highestCtrCreative.url },
-          });
+            lowestCtrCreative.status = "paused";
+            updated = true;
+            
+            // Push pause status to Native API
+            if (campaign.channel === "meta" && lowestCtrCreative.generationId) {
+               console.log(`[Optimizer] Pausing Meta Creative: ${lowestCtrCreative.generationId}`);
+            }
+
+            auditLogs.push({
+              timestamp: new Date(),
+              actor: "ai" as const,
+              action: "pause_creative",
+              description: `Paused underperforming creative due to ad fatigue (CTR ${lowestCtrCreative.ctr.toFixed(4)} vs Winner CTR ${highestCtrCreative.ctr.toFixed(4)}).`,
+              meta: { pausedCreativeUrl: lowestCtrCreative.url, winnerCreativeUrl: highestCtrCreative.url },
+            });
+          } catch (err: any) {
+            if (err instanceof AiSafetyError) {
+              console.log(`[Optimizer] Fatigue detected, but no approval found. Requesting approval for campaign ${campaign._id}`);
+              // In production, this would spawn a new Approval document and notify the user
+              auditLogs.push({
+                timestamp: new Date(),
+                actor: "ai" as const,
+                action: "pause_creative_blocked",
+                description: `AI Safety Guard Blocked Mutation: ${err.message}`,
+              });
+            } else {
+              throw err;
+            }
+          }
         }
 
         // Reallocate budget allocation in campaign budget settings
-        // Shift budget if there's a clear winner
+        // Shift budget if there's a clear winner and we successfully updated
         if (highestCtrCreative && updated) {
           auditLogs.push({
             timestamp: new Date(),

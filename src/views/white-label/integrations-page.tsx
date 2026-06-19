@@ -40,6 +40,14 @@ export interface WhiteLabelIntegrationsPageProps {
   metaAdsConnected: boolean;
   googleAdsConnected: boolean;
   googleAdsCustomerId: string | null;
+  microsoftAdsConnected?: boolean;
+  microsoftAdsCustomerId?: string | null;
+  linkedinAdsConnected?: boolean;
+  linkedinAdsAccountId?: string | null;
+  tiktokAdsConnected?: boolean;
+  tiktokAdsAdvertiserId?: string | null;
+  amazonAdsConnected?: boolean;
+  amazonAdsProfileId?: string | null;
 }
 
 export function WhiteLabelIntegrationsPage({
@@ -47,14 +55,19 @@ export function WhiteLabelIntegrationsPage({
   metaAdsConnected,
   googleAdsConnected,
   googleAdsCustomerId,
+  microsoftAdsConnected = false,
+  microsoftAdsCustomerId = null,
+  linkedinAdsConnected = false,
+  linkedinAdsAccountId = null,
+  tiktokAdsConnected = false,
+  tiktokAdsAdvertiserId = null,
+  amazonAdsConnected = false,
+  amazonAdsProfileId = null,
 }: WhiteLabelIntegrationsPageProps) {
-  const googleAdsModalState = useOverlayState();
-  const [googleCustomerIdInput, setGoogleCustomerIdInput] = useState(googleAdsCustomerId ?? "");
-
   const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
-  const [connectingMeta, setConnectingMeta] = useState(false);
-  const [connectingGoogle, setConnectingGoogle] = useState(false);
+  
+  const [disconnectingNetwork, setDisconnectingNetwork] = useState<string | null>(null);
 
   // Connect a social account
   const handleConnectSocial = async (provider: string) => {
@@ -98,102 +111,31 @@ export function WhiteLabelIntegrationsPage({
     }
   };
 
-  // Connect Meta Ads
-  const handleConnectMetaAds = async () => {
-    setConnectingMeta(true);
-    try {
-      const res = await fetch("/api/integrations/ads", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({network: "meta"}),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        notifySuccess("Meta Ads account connected successfully.");
-        window.location.reload();
-      } else {
-        alert(data.error?.message || "Failed to connect Meta Ads");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("An unexpected error occurred");
-    } finally {
-      setConnectingMeta(false);
-    }
+  // Connect Native Ads via OAuth 2.0
+  const handleConnectAds = (network: string) => {
+    window.location.href = `/api/auth/integrations/${network}/login`;
   };
 
-  // Disconnect Meta Ads
-  const handleDisconnectMetaAds = async () => {
-    if (!confirm("Are you sure you want to disconnect Meta Ads?")) return;
-    setConnectingMeta(true);
+  // Disconnect Native Ads
+  const handleDisconnectAds = async (network: string, label: string) => {
+    if (!confirm(`Are you sure you want to disconnect ${label}?`)) return;
+    setDisconnectingNetwork(network);
     try {
-      const res = await fetch("/api/integrations/ads?network=meta", {
+      const res = await fetch(`/api/integrations/ads?network=${network}`, {
         method: "DELETE",
       });
       const data = await res.json();
       if (data.ok) {
-        notifySuccess("Meta Ads account disconnected.");
+        notifySuccess(`${label} account disconnected.`);
         window.location.reload();
       } else {
-        alert(data.error?.message || "Failed to disconnect Meta Ads");
+        alert(data.error?.message || `Failed to disconnect ${label}`);
       }
     } catch (err) {
       console.error(err);
       alert("An unexpected error occurred");
     } finally {
-      setConnectingMeta(false);
-    }
-  };
-
-  // Connect Google Ads
-  const handleConnectGoogleAds = async () => {
-    if (!googleCustomerIdInput.trim()) return;
-    setConnectingGoogle(true);
-    try {
-      const res = await fetch("/api/integrations/ads", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          network: "google",
-          customerId: googleCustomerIdInput.trim(),
-        }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        notifySuccess("Google Ads account connected successfully.");
-        googleAdsModalState.close();
-        window.location.reload();
-      } else {
-        alert(data.error?.message || "Failed to connect Google Ads");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("An unexpected error occurred");
-    } finally {
-      setConnectingGoogle(false);
-    }
-  };
-
-  // Disconnect Google Ads
-  const handleDisconnectGoogleAds = async () => {
-    if (!confirm("Are you sure you want to disconnect Google Ads?")) return;
-    setConnectingGoogle(true);
-    try {
-      const res = await fetch("/api/integrations/ads?network=google", {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (data.ok) {
-        notifySuccess("Google Ads account disconnected.");
-        window.location.reload();
-      } else {
-        alert(data.error?.message || "Failed to disconnect Google Ads");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("An unexpected error occurred");
-    } finally {
-      setConnectingGoogle(false);
+      setDisconnectingNetwork(null);
     }
   };
 
@@ -203,6 +145,57 @@ export function WhiteLabelIntegrationsPage({
     {id: "linkedin", label: "LinkedIn", desc: "Publish professional posts and updates to company pages."},
     {id: "twitter", label: "X (Twitter)", desc: "Post quick alerts and text snippets to accounts."},
     {id: "youtube", label: "YouTube", desc: "Upload and schedule video content to channels."},
+  ];
+
+  const adNetworks = [
+    {
+      id: "google",
+      label: "Google Ads",
+      desc: "Optimize search & display campaigns.",
+      connected: googleAdsConnected,
+      accountId: googleAdsCustomerId,
+      scopes: "Ads Management (read/write)",
+    },
+    {
+      id: "meta",
+      label: "Meta Ads Manager",
+      desc: "Automate Facebook & Instagram campaigns.",
+      connected: metaAdsConnected,
+      accountId: metaAdsConnected ? "Authorized Profile" : null,
+      scopes: "Ads Management, Page Posts (read/write)",
+    },
+    {
+      id: "microsoft",
+      label: "Microsoft Advertising",
+      desc: "Automate Bing search campaigns.",
+      connected: microsoftAdsConnected,
+      accountId: microsoftAdsCustomerId,
+      scopes: "Ads Management, Offline Access (read/write)",
+    },
+    {
+      id: "linkedin",
+      label: "LinkedIn Campaign Manager",
+      desc: "Optimize professional B2B campaigns.",
+      connected: linkedinAdsConnected,
+      accountId: linkedinAdsAccountId,
+      scopes: "Ads, Reporting, Company Social (read/write)",
+    },
+    {
+      id: "tiktok",
+      label: "TikTok Ads Manager",
+      desc: "Manage and optimize video ad creatives.",
+      connected: tiktokAdsConnected,
+      accountId: tiktokAdsAdvertiserId,
+      scopes: "Ads Management (read/write)",
+    },
+    {
+      id: "amazon",
+      label: "Amazon Advertising",
+      desc: "Automate sponsored product ads.",
+      connected: amazonAdsConnected,
+      accountId: amazonAdsProfileId,
+      scopes: "Campaign Management (read/write)",
+    },
   ];
 
   return (
@@ -309,125 +302,73 @@ export function WhiteLabelIntegrationsPage({
               </span>
               <div className="flex flex-col">
                 <Card.Title className="text-base">Ad Networks</Card.Title>
-                <Card.Description>Authorize Google & Meta campaigns.</Card.Description>
+                <Card.Description>Authorize and manage native campaign sync.</Card.Description>
               </div>
             </div>
           </Card.Header>
 
           <Card.Content className="px-6 pb-6 pt-2 flex flex-col gap-4">
-            {/* Meta Ads Integration */}
-            <div className="flex flex-col gap-2 border-b border-default-100 pb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="font-semibold text-sm">Meta Ads Manager</span>
-                  <span className="text-xs text-default-400">Automate Facebook & Instagram campaigns.</span>
-                </div>
-                {metaAdsConnected && (
-                  <Chip color="success" size="sm" variant="soft">
-                    Linked
-                  </Chip>
-                )}
-              </div>
-              <div className="flex justify-end pt-1">
-                {metaAdsConnected ? (
-                  <Button
-                    size="sm"
-                    variant="tertiary"
-                    isDisabled={connectingMeta}
-                    onPress={handleDisconnectMetaAds}
-                  >
-                    Disconnect
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    isDisabled={connectingMeta}
-                    onPress={handleConnectMetaAds}
-                  >
-                    {connectingMeta ? (
-                      <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent mr-1" />
-                    ) : (
-                      <PlugWire className="size-4 mr-1" />
+            {adNetworks.map((network) => (
+              <div
+                key={network.id}
+                className="flex flex-col gap-2 border-b border-default-100 pb-4 last:border-b-0 last:pb-0"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm">{network.label}</span>
+                      {network.connected && (
+                        <Chip color="success" size="sm" variant="soft">
+                          Active
+                        </Chip>
+                      )}
+                    </div>
+                    <span className="text-xs text-default-400 mt-0.5">{network.desc}</span>
+                    
+                    {network.connected && (
+                      <div className="mt-2 flex flex-col gap-1 rounded-lg bg-default-50 p-2 border border-default-100">
+                        {network.accountId && (
+                          <div className="flex items-center justify-between text-[10px] font-mono text-default-600">
+                            <span>ID:</span>
+                            <span>{network.accountId}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between text-[10px] font-mono text-default-600">
+                          <span>Scopes:</span>
+                          <span className="text-right text-primary font-semibold">{network.scopes}</span>
+                        </div>
+                      </div>
                     )}
-                    Connect Meta
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Google Ads Integration */}
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="font-semibold text-sm">Google Ads Manager</span>
-                  <span className="text-xs text-default-400">Optimize search campaigns.</span>
+                  </div>
                 </div>
-                {googleAdsConnected && (
-                  <Chip color="success" size="sm" variant="soft">
-                    Linked
-                  </Chip>
-                )}
+                <div className="flex justify-end pt-1">
+                  {network.connected ? (
+                    <Button
+                      size="sm"
+                      variant="tertiary"
+                      isDisabled={disconnectingNetwork !== null}
+                      onPress={() => handleDisconnectAds(network.id, network.label)}
+                    >
+                      {disconnectingNetwork === network.id ? (
+                        <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent mr-1" />
+                      ) : (
+                        <TrashBin className="size-4 mr-1 text-danger" />
+                      )}
+                      <span className="text-danger">Disconnect</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onPress={() => handleConnectAds(network.id)}
+                    >
+                      <PlugWire className="size-4 mr-1" />
+                      Connect via OAuth 2.0
+                    </Button>
+                  )}
+                </div>
               </div>
-              {googleAdsConnected && googleAdsCustomerId && (
-                <span className="text-xs font-mono text-default-500">
-                  Customer ID: {googleAdsCustomerId}
-                </span>
-              )}
-              <div className="flex justify-end pt-1">
-                {googleAdsConnected ? (
-                  <Button
-                    size="sm"
-                    variant="tertiary"
-                    isDisabled={connectingGoogle}
-                    onPress={handleDisconnectGoogleAds}
-                  >
-                    Disconnect
-                  </Button>
-                ) : (
-                  <ModalShell
-                    state={googleAdsModalState}
-                    trigger={
-                      <Button size="sm">
-                        <PlugWire className="size-4 mr-1" />
-                        Connect Google
-                      </Button>
-                    }
-                  >
-                    <Modal.Container placement="center" size="md">
-                      <Modal.Dialog>
-                        <Modal.Header>
-                          <Modal.Heading>Connect Google Ads</Modal.Heading>
-                        </Modal.Header>
-                        <Modal.Body>
-                          <TextField
-                            name="customerId"
-                            value={googleCustomerIdInput}
-                            onChange={setGoogleCustomerIdInput}
-                          >
-                            <Label>Google Ads Customer ID</Label>
-                            <Input placeholder="xxx-xxx-xxxx" />
-                          </TextField>
-                        </Modal.Body>
-                        <Modal.Footer>
-                          <Button slot="close" variant="tertiary">
-                            Cancel
-                          </Button>
-                          <Button
-                            isDisabled={!googleCustomerIdInput.trim() || connectingGoogle}
-                            onPress={handleConnectGoogleAds}
-                          >
-                            {connectingGoogle ? (
-                              <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent mr-1" />
-                            ) : null}
-                            Connect Account
-                          </Button>
-                        </Modal.Footer>
-                      </Modal.Dialog>
-                    </Modal.Container>
-                  </ModalShell>
-                )}
-              </div>
-            </div>
+            ))}
           </Card.Content>
         </Card>
       </div>

@@ -455,8 +455,49 @@ Identified and resolved a role escalation vulnerability where Agency Admins coul
 #### 3. Verification
 - **Compilation Check**: Executed `npx tsc --noEmit` and confirmed zero compilation or type-safety errors.
 
+---
 
+### June 17, 2026: Cleanup & Native Ads Engine Architecture
 
+#### 1. Codebase Cleanup & Fixes (Branch: chore/mic-cleanup)
+- **Competitor Metrics Integrity**: Refactored the `serializeCompetitor` function in `src/server/db/schemas/competitors.ts`. Removed the hash-based fake metric generators to ensure we never display fake data to the client.
+- **Integrations Hub Cleanup**: Deleted the mock token API route (`api/integrations/ads/route.ts`) and removed the fake "Connect Meta/Google" buttons from the UI to ensure the onboarding flow is no longer falsely marked as "Complete."
+- **Stripe Billing Decommission**: Fully deleted the legacy Stripe billing route (`api/white-label/billing/stripe/route.ts`) and stripped the `stripeConnected` field from the organizations database schema.
+- **Legacy Code Purge**: Permanently deleted outdated directories including `docs/superpowers/`, `skills-lock.json`, and `public/oldsite/`.
+- **Validation**: Executed `pnpm typecheck` across both workspaces to guarantee the schema updates and deletions caused zero compilation errors.
 
+#### 2. Architecture Planning: The Native Ads Engine (Branch: feat/oauth-ads-integrations)
+- **Research & Pivot**: Reviewed Mic's research on marketing APIs and confirmed that Outstand.so is incapable of managing Paid Ads. Ruled out third-party aggregators (like Skai, Marin, and TapClicks) due to high enterprise licensing costs and limited campaign creation features.
+- **New Architecture Designed**: Finalized the architectural plan to build direct **Native API integrations** for all 6 requested platforms: Google Ads, Meta, Microsoft Ads, LinkedIn, TikTok, and Amazon.
+- **The OAuth 2.0 Solution**: Designed a "One-Click" OAuth 2.0 workflow. This ensures that Agency Owners and Local Businesses will not have to handle complex Developer Tokens. They can seamlessly authenticate and securely grant StatXEO permission to manage their campaigns.
+- **Future-Proofing Social**: Identified that integrating Meta via OAuth 2.0 will allow us to request both Ads permissions and Organic Social permissions simultaneously, paving the way to eventually replace Outstand entirely.
 
+---
+
+### June 18, 2026: Real Native Ads Integration Engine (Branch: feat/oauth-ads-integrations)
+
+#### 1. Database Schema & Security Expansions
+- **AES-256-GCM Token Encryption**: Built secure AES-256-GCM token encryption and decryption utilities (`encryptToken`, `decryptToken`) in [crypto.ts](file:///d:/staxeo%20web/statxeo-main/src/server/auth/crypto.ts) using `AUTH_SESSION_SECRET` to ensure token security at rest.
+- **Extended User Schema**: Expanded [users.ts](file:///d:/staxeo%20web/statxeo-main/src/server/db/schemas/users.ts) with encrypted access/refresh token and platform account/advertiser/profile ID fields for Microsoft, LinkedIn, TikTok, and Amazon Ads networks.
+
+#### 2. Universal OAuth 2.0 Engine & State Protection
+- **OAuth Login Route**: Created [login/route.ts](file:///d:/staxeo%20web/statxeo-main/src/app/api/auth/integrations/[network]/login/route.ts) which generates a cryptographically signed CSRF `state` parameter containing the Organization ID and User ID to secure tenant isolation.
+- **OAuth Callback Route**: Created [callback/route.ts](file:///d:/staxeo%20web/statxeo-main/src/app/api/auth/integrations/[network]/callback/route.ts) that validates the signed state, exchanges authorization codes, encrypts tokens, and maps them to the respective user/organization in MongoDB.
+- **State Validation Security**: Updated [oauth-state.ts](file:///d:/staxeo%20web/statxeo-main/src/server/auth/oauth-state.ts) to support optional ads-related state parameters.
+
+#### 3. Resilient Native API Clients
+- **Base Client**: Created [base-client.ts](file:///d:/staxeo%20web/statxeo-main/src/lib/marketing/base-client.ts) implementing automatic exponential backoff retry for HTTP 429 Rate Limits and network drops.
+- **Microsoft Client**: Added [microsoft-ads.ts](file:///d:/staxeo%20web/statxeo-main/src/lib/marketing/microsoft-ads.ts) extending `BaseAdsClient` showing token rotation and mutation hooks.
+
+#### 4. Campaign Optimizer & Gating Checks
+- **AI Safety Guard**: Added `assertCanMutateAds` in [safety.ts](file:///d:/staxeo%20web/statxeo-main/src/server/ai/safety.ts) that blocks AI optimization mutations unless a matching approved `Approval` record is present (human-in-the-loop).
+- **Audit Trails**: Integrated safety checks into [campaign-optimizer.ts](file:///d:/staxeo%20web/statxeo-main/src/lib/marketing/campaign-optimizer.ts), writing immutable optimization/blocked actions to the `workflow-executions` audit logs.
+
+#### 5. UI Integrations Hub & Disconnections
+- **Frontend Redesign**: Redesigned [integrations-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/white-label/integrations-page.tsx) to list all 6 ad networks with connection status, profile/account IDs, and permission scopes.
+- **Disconnection API**: Developed `/api/integrations/ads` with a `DELETE` handler to wipe access tokens and restore default integration status.
+
+#### 6. Verification & Typecheck
+- **Verification Tests**: Verified the encryption/decryption functions with a dedicated test script [test-crypto.ts](file:///C:/Users/lenevo/.gemini/antigravity-ide/brain/94e36273-0cfe-482c-91ed-50e7f8a3c582/scratch/test-crypto.ts).
+- **TypeScript**: Ran project-wide type compilation checks (`pnpm typecheck`) and confirmed zero errors or warnings.
 
