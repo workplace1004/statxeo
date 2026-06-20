@@ -6,8 +6,9 @@ import type {UseOverlayStateReturn} from "@heroui/react";
 import {Rocket} from "@gravity-ui/icons";
 import {Button, Input, Label, Modal, TextArea, TextField, useOverlayState} from "@heroui/react";
 import {useState} from "react";
+import {useRouter} from "next/navigation";
 
-import {notifySuccess} from "../../../lib/ui/white-label-notify";
+import {notifyError, notifySuccess} from "../../../lib/ui/white-label-notify";
 import {ModalShell} from "../../../lib/ui/modal-shell";
 
 export interface GenerateWebsiteModalProps {
@@ -18,17 +19,45 @@ export interface GenerateWebsiteModalProps {
 export function GenerateWebsiteModal({state: externalState, trigger}: GenerateWebsiteModalProps) {
   const internalState = useOverlayState();
   const state = externalState ?? internalState;
+  const router = useRouter();
   const [domain, setDomain] = useState("");
   const [business, setBusiness] = useState("");
   const [brief, setBrief] = useState("");
+  const [generating, setGenerating] = useState(false);
 
-  function handleGenerate(close: () => void) {
+  async function handleGenerate(close: () => void) {
     if (!business.trim()) return;
-    notifySuccess(`Website generation started for ${business.trim()}`);
-    setDomain("");
-    setBusiness("");
-    setBrief("");
-    close();
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/white-label/websites", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          businessName: business.trim(),
+          domain: domain.trim() || undefined,
+          brief: brief.trim() || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error?.message || "Failed to start website generation");
+      }
+
+      notifySuccess(`Website generation started for ${business.trim()}`);
+      setDomain("");
+      setBusiness("");
+      setBrief("");
+      router.refresh();
+      close();
+    } catch (err: any) {
+      console.error(err);
+      notifyError(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setGenerating(false);
+    }
   }
 
   return (
@@ -42,15 +71,15 @@ export function GenerateWebsiteModal({state: externalState, trigger}: GenerateWe
               </p>
             </Modal.Header>
             <Modal.Body className="flex flex-col gap-3">
-              <TextField isRequired name="site-business" value={business} onChange={setBusiness}>
+              <TextField isRequired name="site-business" value={business} onChange={setBusiness} isDisabled={generating}>
                 <Label>Business name</Label>
                 <Input placeholder="Customer business name" />
               </TextField>
-              <TextField name="site-domain" value={domain} onChange={setDomain}>
+              <TextField name="site-domain" value={domain} onChange={setDomain} isDisabled={generating}>
                 <Label>Preferred domain</Label>
                 <Input placeholder="business.com" />
               </TextField>
-              <TextField name="site-brief" value={brief} onChange={setBrief}>
+              <TextField name="site-brief" value={brief} onChange={setBrief} isDisabled={generating}>
                 <Label>Creative brief</Label>
                 <TextArea
                   className="min-h-24 resize-y"
@@ -59,12 +88,16 @@ export function GenerateWebsiteModal({state: externalState, trigger}: GenerateWe
               </TextField>
             </Modal.Body>
             <Modal.Footer>
-              <Button slot="close" variant="tertiary">
+              <Button slot="close" variant="tertiary" isDisabled={generating}>
                 Cancel
               </Button>
-              <Button isDisabled={!business.trim()} onPress={() => handleGenerate(state.close)}>
-                <Rocket className="size-4" />
-                Start generation
+              <Button isDisabled={!business.trim() || generating} onPress={() => handleGenerate(state.close)}>
+                {generating ? (
+                  <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent mr-1" />
+                ) : (
+                  <Rocket className="size-4" />
+                )}
+                {generating ? "Generating…" : "Start generation"}
               </Button>
             </Modal.Footer>
           </Modal.Dialog>
