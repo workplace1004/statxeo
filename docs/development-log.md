@@ -524,3 +524,31 @@ Identified and resolved a role escalation vulnerability where Agency Admins coul
 #### 5. Verification & Typecheck
 - **TypeScript**: Ran project-wide compilation checks (`pnpm typecheck`) and confirmed zero errors or warnings.
 
+---
+
+### June 20, 2026: Attach UI to AI Website Creator Agent (Branch: feat/attach-website-agent-ui)
+
+#### 1. Backend API Endpoint
+- **Websites Route**: Created [route.ts](file:///d:/staxeo%20web/statxeo-main/src/app/api/white-label/websites/route.ts) with nodejs runtime and force-dynamic:
+  - `POST`: Authenticates the operator session and resolves the reseller's organization using `getAuthenticatedWhiteLabeler`.
+  - Creates a reseller site record in the `sites` collection with status `"Generating"`.
+  - Provisions a paid lead in the `siteLeads` collection and links it to the user in `customerLeadLinks`.
+  - Calls `createProjectFromPaidLead` to initialize the project schema.
+  - Updates the creative brief/brief prompt details in both `siteProjects` (`targetAudience` field) and `siteIntakeSubmissions`.
+  - Creates an initial generation job using `createGenerationJob` and calls the background orchestrator `runGenerationJob`.
+  - Registers the execution payload in the system outbox, logs generation events, and records credit ledger reservations.
+  - Attaches success and failure callbacks to the background promise:
+    - On success: Promotes the reseller site status to `"Review"` and attaches the `previewUrl`.
+    - On failure: Promotes status to `"Draft"`.
+
+#### 2. Frontend Modal UI Integration
+- **Generate Website Modal**: Updated [generate-website-modal.tsx](file:///d:/staxeo%20web/statxeo-main/src/widgets/white-label/modals/generate-website-modal.tsx):
+  - Binds the input fields (Business name, Preferred domain, Creative brief) to the API payload.
+  - Replaced the placeholder mock success toast with a fetch request posting to `/api/white-label/websites`.
+  - Implemented an active loading state (`generating`) that disables all inputs, the Cancel button, and the Start generation button to prevent duplicate submissions.
+  - Renders a loading spinner inside the submission button while generating.
+  - Close the modal, triggers a success toast, and refreshes the page using `router.refresh()` to fetch and render the new site.
+
+#### 3. Verification & Typecheck
+- **TypeScript**: Ran project-wide compilation checks (`pnpm typecheck`) and confirmed zero errors or warnings.
+
