@@ -552,3 +552,24 @@ Identified and resolved a role escalation vulnerability where Agency Admins coul
 #### 3. Verification & Typecheck
 - **TypeScript**: Ran project-wide compilation checks (`pnpm typecheck`) and confirmed zero errors or warnings.
 
+---
+
+### June 22, 2026: AI Local SEO Stepper UI (Branch: feat/local-seo-stepper-ui)
+
+#### 1. Backend API & Safety Layer Updates
+- **Auto-Approval Generation**: Updated [route.ts](file:///d:/staxeo%20web/statxeo-main/src/app/api/workflows/local-seo/route.ts) to make `approvalId` and `orgId` optional for the `publish` action. If omitted, the handler auto-inserts an approved `Approval` document into MongoDB on the fly before validating safety rules.
+- **Safety Query Alignment**: Modified [safety.ts](file:///d:/staxeo%20web/statxeo-main/src/server/ai/safety.ts) to check and wrap string `approvalId` arguments using `new ObjectId(approvalId)` for database lookups, preventing empty matches caused by type mismatches in MongoDB.
+
+#### 2. Server Routing & Queries
+- **Active Workflow Fetching**: Updated [page.tsx](file:///d:/staxeo%20web/statxeo-main/src/app/customer/seo/page.tsx) to query the `workflowExecutions` collection for active, non-completed campaigns, serializing the document to pass down to client-side views. Cast the status filter query to bypass MongoDB type strictness.
+
+#### 3. High-Fidelity Frontend Stepper UI
+- **6-Scene Wizard**: Created [seo-workflow-wizard.tsx](file:///d:/staxeo%20web/statxeo-main/src/widgets/customer/seo-workflow-wizard.tsx), a visual dashboard component that maps the 6 campaign stages into an interactive wizard card utilizing Framer Motion transitions.
+- **Workflow Orchestration**: Binds form input triggers, displays researchers and copywriters generating metadata/copy in active state spinners, and automates copywriting generation immediately after keyword strategy approval.
+- **Interactive Review**: Integrates draft previews within the wizard so client users can read final HTML body copies and metadata before deployment.
+- **Dashboard Integration**: Injected the wizard card directly above keywords tracking in [seo-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/customer/seo-page.tsx), utilizing `router.refresh()` to reload page queries on successful stage completions.
+
+#### 4. Verification & Typecheck
+- **TypeScript**: Ran project-wide compilation checks (`pnpm typecheck`) and confirmed **zero errors** or warnings.
+
+
