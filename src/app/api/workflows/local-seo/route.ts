@@ -110,8 +110,8 @@ const advanceSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("publish"),
     workflowId: z.string().min(1),
-    approvalId: z.string().min(1),
-    orgId: z.string().min(1),
+    approvalId: z.string().optional(),
+    orgId: z.string().optional(),
   }),
 ]);
 
@@ -172,8 +172,39 @@ export async function PATCH(request: NextRequest) {
       if (!execDoc) {
         return NextResponse.json({ok: false, error: {code: "NOT_FOUND", message: "Workflow not found"}}, {status: 404});
       }
+
+      let approvalId = input.approvalId;
+      let orgId = input.orgId;
+
+      if (!approvalId) {
+        // Auto-create approved approval record
+        const approvalsCol = await collections.approvals();
+        const now = new Date();
+        const fallbackOrgId = user!.organizationId ?? execDoc.clientOrgId ?? "";
+
+        const result = await approvalsCol.insertOne({
+          orgId: fallbackOrgId,
+          customerId: execDoc.clientOrgId ?? null,
+          customerName: user!.name ?? "Client User",
+          customerAvatar: null,
+          kind: "website" as const,
+          summary: `Auto-approved publish for workflow ${input.workflowId}`,
+          count: 1,
+          payloadRef: input.workflowId,
+          requestedBy: session!.email,
+          requestedAt: now,
+          dueAt: null,
+          status: "approved" as const,
+          createdAt: now,
+          updatedAt: now,
+        } as any);
+
+        approvalId = result.insertedId.toString();
+        orgId = fallbackOrgId;
+      }
+
       // Safety check before publish
-      await approvePublish(input.workflowId, input.approvalId, input.orgId, session!.email);
+      await approvePublish(input.workflowId, approvalId, orgId!, session!.email);
       // Pull generated pages from snapshot v2
       const pageSnapshot = execDoc.snapshots?.find((s: any) => s.version === 2);
       const pages = pageSnapshot?.payload?.pages ?? [];

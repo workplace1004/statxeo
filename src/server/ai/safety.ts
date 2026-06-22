@@ -1,5 +1,6 @@
 import "server-only";
 
+import {ObjectId} from "mongodb";
 import {can, PermissionError} from "@/server/auth/permissions";
 import type {UserRole} from "@/server/db/schemas/users";
 import type {SessionPayload} from "@/server/auth/session";
@@ -93,8 +94,15 @@ export async function assertCanPublish(opts: {
   const {orgId, approvalId, actorEmail, workflowId} = opts;
 
   const col = await collections.approvals();
+  let queryId: any = approvalId;
+  try {
+    if (ObjectId.isValid(approvalId)) {
+      queryId = new ObjectId(approvalId);
+    }
+  } catch {}
+
   const approval = await col.findOne({
-    _id: approvalId as any,
+    _id: queryId,
     orgId,
     status: "approved",
   });
@@ -150,8 +158,15 @@ export async function assertCanMutateAds(opts: {
   }
 
   const col = await collections.approvals();
+  let queryId: any = approvalId;
+  try {
+    if (ObjectId.isValid(approvalId)) {
+      queryId = new ObjectId(approvalId);
+    }
+  } catch {}
+
   const approval = await col.findOne({
-    _id: approvalId as any,
+    _id: queryId,
     orgId,
     status: "approved",
   });

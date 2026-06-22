@@ -8,10 +8,12 @@ import {ArrowDown, ArrowUp, ChartLine, Magnifier, Plus, Sparkles, Target} from "
 import {Button, Card, Chip, SearchField, useOverlayState} from "@heroui/react";
 import {DataGrid, KPI, LineChart, NumberValue, TrendChip} from "@heroui-pro/react";
 import {useMemo, useState} from "react";
+import {useRouter} from "next/navigation";
 
 import {TrackKeywordModal} from "../../widgets/customer/modals/track-keyword-modal";
 import {AutomationBanner} from "../../widgets/customer/automation-banner";
 import {EmptyState} from "../../widgets/empty-state";
+import {SeoWorkflowWizard} from "../../widgets/customer/seo-workflow-wizard";
 
 export interface RankingPoint {
   week: string;
@@ -30,6 +32,8 @@ export interface CustomerSeoPageProps {
   rankingHistory: RankingPoint[];
   scores: SeoScore[];
   avgRank: number | null;
+  activeWorkflow: any;
+  clientOrgId: string;
 }
 
 function ChangeBadge({change}: {change: number}) {
@@ -98,7 +102,10 @@ export function CustomerSeoPage({
   keywords,
   rankingHistory,
   scores,
+  activeWorkflow,
+  clientOrgId,
 }: CustomerSeoPageProps) {
+  const router = useRouter();
   const trackState = useOverlayState();
   const [search, setSearch] = useState("");
 
@@ -208,6 +215,11 @@ export function CustomerSeoPage({
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 pb-10 pt-4">
       <AutomationBanner message="AI is monitoring your keywords — rankings update daily" />
+      <SeoWorkflowWizard
+        activeWorkflow={activeWorkflow}
+        clientOrgId={clientOrgId}
+        onRefresh={() => router.refresh()}
+      />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-muted text-sm">
           Track your search visibility, beat the competition, and find new keywords to win.
