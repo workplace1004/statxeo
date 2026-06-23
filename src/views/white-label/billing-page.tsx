@@ -15,7 +15,7 @@ import {notifyInfo, notifySuccess} from "../../lib/ui/white-label-notify";
 import {NewInvoiceModal} from "../../widgets/white-label/modals/new-invoice-modal";
 import {INVOICE_STATUS_COLOR} from "../../server/db/schemas/invoices";
 import {EmptyState} from "../../widgets/empty-state";
-import {PageToolbar} from "../../widgets/white-label/page-toolbar";
+import {PageToolbar} from "../../widgets/page-toolbar";
 
 export interface WhiteLabelBillingPageProps {
   invoices: InvoiceAgency[];

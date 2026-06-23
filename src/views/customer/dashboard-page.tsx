@@ -9,6 +9,7 @@ import {motion} from "motion/react";
 import Link from "next/link";
 
 import {RouteButton} from "../../components/route-button";
+import {PageToolbar} from "../../widgets/page-toolbar";
 import {AutomationSpotlightCard} from "../../widgets/customer/automation-spotlight-card";
 import {ChannelsCard} from "../../widgets/customer/channels-card";
 import {DashboardKpiRow} from "../../widgets/customer/dashboard-kpi-row";
@@ -39,16 +40,17 @@ export function CustomerDashboardPage({
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 pb-10 pt-4">
-      {/* Hero welcome row */}
-      <motion.div
-        animate={{opacity: 1, y: 0}}
-        className="from-accent/10 flex flex-col gap-4 rounded-2xl bg-gradient-to-br to-transparent p-5 sm:flex-row sm:items-center sm:justify-between"
-        initial={{opacity: 0, y: 10}}
-        transition={{duration: 0.3}}
-      >
-        <div className="flex flex-col gap-1.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-foreground text-xl font-semibold">{businessName}</h2>
+      {/* Page Header */}
+      <PageToolbar
+        title={businessName}
+        description={
+          businessProfile
+            ? "Here's a quick look at how things are running today."
+            : "Add your business details to unlock your personalized overview."
+        }
+        showPeriod={false}
+        leading={
+          <div className="flex flex-wrap items-center gap-2 mt-1">
             {!businessProfile ? (
               <Link href="/customer/settings">
                 <Chip color="warning" size="sm" variant="soft">
@@ -61,26 +63,23 @@ export function CustomerDashboardPage({
               </Chip>
             )}
           </div>
-          <p className="text-muted text-sm">
-            {businessProfile
-              ? "Here's a quick look at how things are running today."
-              : "Add your business details to unlock your personalized overview."}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {pendingCount > 0 ? (
-            <RouteButton href="/customer/ai" size="sm" variant="secondary">
-              <span className="bg-accent flex size-4 items-center justify-center rounded-full text-[10px] font-semibold text-white tabular-nums">
-                {pendingCount}
-              </span>
-              Review AI tasks
+        }
+        trailing={
+          <div className="flex shrink-0 items-center gap-2">
+            {pendingCount > 0 ? (
+              <RouteButton href="/customer/ai" size="sm" variant="secondary">
+                <span className="bg-accent flex size-4 items-center justify-center rounded-full text-[10px] font-semibold text-white tabular-nums">
+                  {pendingCount}
+                </span>
+                Review AI tasks
+              </RouteButton>
+            ) : null}
+            <RouteButton href="/customer/ai" size="sm">
+              Open AI assistant
             </RouteButton>
-          ) : null}
-          <RouteButton href="/customer/ai" size="sm">
-            Open AI assistant
-          </RouteButton>
-        </div>
-      </motion.div>
+          </div>
+        }
+      />
 
       {showWebsiteSetupBanner && (
         <div className="border-warning/30 bg-warning/10 flex items-center justify-between gap-4 rounded-xl border px-4 py-2.5">

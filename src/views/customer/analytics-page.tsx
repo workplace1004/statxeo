@@ -4,17 +4,17 @@ import type {ChannelPoint} from "../../widgets/customer/channels-card";
 import type {DevicePoint} from "../../widgets/customer/devices-card";
 import type {TrafficPoint} from "../../widgets/customer/traffic-line-card";
 
-import {Calendar, ChartColumn} from "@gravity-ui/icons";
-import {ArrowDownToLine} from "@gravity-ui/icons";
+import {ChartColumn, ArrowDownToLine} from "@gravity-ui/icons";
 import {Button, Card} from "@heroui/react";
-import {KPI, Segment} from "@heroui-pro/react";
+import {KPI, KPIGroup, Segment} from "@heroui-pro/react";
 import {useState} from "react";
 
 import {exportAnalyticsCsv} from "../../lib/export/export-customer-csv";
-import {notifyInfo, notifySuccess} from "../../lib/ui/white-label-notify";
+import {notifySuccess} from "../../lib/ui/white-label-notify";
 import {ChannelsCard} from "../../widgets/customer/channels-card";
 import {DevicesCard} from "../../widgets/customer/devices-card";
 import {TrafficLineCard} from "../../widgets/customer/traffic-line-card";
+import {PageToolbar} from "../../widgets/page-toolbar";
 import {EmptyState} from "../../widgets/empty-state";
 
 const RANGES = ["7D", "30D", "90D", "12M"] as const;
@@ -52,46 +52,40 @@ export function CustomerAnalyticsPage({
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 pb-10 pt-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-muted text-sm">
-          See how every channel — search, social, calls — feeds your pipeline.
-        </p>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="tertiary"
-            onPress={() => notifyInfo(`Showing last ${range === "7D" ? "7" : range === "30D" ? "30" : range === "90D" ? "90" : "365"} days`)}
-          >
-            <Calendar className="size-4" />
-            Last {range === "12M" ? "12 months" : `${range.replace("D", "")} days`}
-          </Button>
-          <Segment
-            aria-label="Time range"
-            selectedKey={range}
-            size="sm"
-            onSelectionChange={(key: any) => setRange(String(key))}
-          >
-            {RANGES.map((r) => (
-              <Segment.Item key={r} id={r}>
-                {r}
-              </Segment.Item>
-            ))}
-          </Segment>
-          <Button
-            size="sm"
-            variant="tertiary"
-            onPress={() => {
-              exportAnalyticsCsv({range, traffic, channels, devices});
-              notifySuccess(`Exported analytics snapshot (${range})`);
-            }}
-          >
-            <ArrowDownToLine className="size-4" />
-            Export
-          </Button>
-        </div>
-      </div>
+      <PageToolbar
+        title="Analytics"
+        description="See how every channel — search, social, calls — feeds your pipeline."
+        showPeriod={false}
+        trailing={
+          <>
+            <Segment
+              aria-label="Time range"
+              selectedKey={range}
+              size="sm"
+              onSelectionChange={(key: any) => setRange(String(key))}
+            >
+              {RANGES.map((r) => (
+                <Segment.Item key={r} id={r}>
+                  {r}
+                </Segment.Item>
+              ))}
+            </Segment>
+            <Button
+              size="sm"
+              variant="tertiary"
+              onPress={() => {
+                exportAnalyticsCsv({range, traffic, channels, devices});
+                notifySuccess(`Exported analytics snapshot (${range})`);
+              }}
+            >
+              <ArrowDownToLine className="size-4" />
+              Export
+            </Button>
+          </>
+        }
+      />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <KPIGroup>
         <KPI>
           <KPI.Header>
             <KPI.Title>Visitors</KPI.Title>
@@ -100,6 +94,7 @@ export function CustomerAnalyticsPage({
             <span className="text-foreground text-2xl font-semibold tabular-nums">—</span>
           </KPI.Content>
         </KPI>
+        <KPIGroup.Separator />
         <KPI>
           <KPI.Header>
             <KPI.Title>Leads</KPI.Title>
@@ -112,6 +107,7 @@ export function CustomerAnalyticsPage({
             )}
           </KPI.Content>
         </KPI>
+        <KPIGroup.Separator />
         <KPI>
           <KPI.Header>
             <KPI.Title>Bookings</KPI.Title>
@@ -124,6 +120,7 @@ export function CustomerAnalyticsPage({
             )}
           </KPI.Content>
         </KPI>
+        <KPIGroup.Separator />
         <KPI>
           <KPI.Header>
             <KPI.Title>Conversion rate</KPI.Title>
@@ -132,7 +129,7 @@ export function CustomerAnalyticsPage({
             <span className="text-foreground text-2xl font-semibold tabular-nums">—</span>
           </KPI.Content>
         </KPI>
-      </div>
+      </KPIGroup>
 
       <TrafficLineCard data={traffic} />
 

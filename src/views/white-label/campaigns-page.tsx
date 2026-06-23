@@ -48,7 +48,7 @@ import {IconButton} from "../../components/icon-button";
 import {notifyInfo, notifySuccess} from "../../lib/ui/white-label-notify";
 import {ModalShell} from "../../lib/ui/modal-shell";
 import {EmptyState} from "../../widgets/empty-state";
-import {PageToolbar} from "../../widgets/white-label/page-toolbar";
+import {PageToolbar} from "../../widgets/page-toolbar";
 
 // Currency / number formatters
 const formatDollars = (val: number) => {

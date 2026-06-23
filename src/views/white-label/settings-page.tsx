@@ -22,7 +22,7 @@ import {
 
 import type {Organization} from "../../server/db/schemas/organizations";
 import {notifyInfo, notifySuccess} from "../../lib/ui/white-label-notify";
-import {PageToolbar} from "../../widgets/white-label/page-toolbar";
+import {PageToolbar} from "../../widgets/page-toolbar";
 
 const TIMEZONES = [
   {id: "et", label: "Eastern Time (US)"},

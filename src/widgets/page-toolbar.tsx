@@ -5,7 +5,7 @@ import type {ReactNode} from "react";
 import {ArrowsRotateLeft, Calendar, ChevronDown} from "@gravity-ui/icons";
 import {Button, ButtonGroup, Dropdown, Label} from "@heroui/react";
 
-import {IconButton} from "../../components/icon-button";
+import {IconButton} from "../components/icon-button";
 
 export interface PageToolbarProps {
   title?: string;

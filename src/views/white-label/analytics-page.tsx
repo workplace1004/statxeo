@@ -7,7 +7,7 @@ import {useCallback, useEffect, useState} from "react";
 import {downloadCsv} from "../../lib/export/export-csv";
 import {notifyError, notifySuccess} from "../../lib/ui/white-label-notify";
 import {EmptyState} from "../../widgets/empty-state";
-import {PageToolbar} from "../../widgets/white-label/page-toolbar";
+import {PageToolbar} from "../../widgets/page-toolbar";
 
 const TIME_RANGES = ["7D", "30D", "90D", "12M"] as const;
 type TimeRange = (typeof TIME_RANGES)[number];

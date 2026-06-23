@@ -22,7 +22,7 @@ import {
 import {useState} from "react";
 
 import {notifySuccess} from "../../lib/ui/white-label-notify";
-import {PageToolbar} from "../../widgets/white-label/page-toolbar";
+import {PageToolbar} from "../../widgets/page-toolbar";
 import {ModalShell} from "../../lib/ui/modal-shell";
 
 export interface ConnectedSocialAccount {

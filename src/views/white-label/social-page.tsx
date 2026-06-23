@@ -27,7 +27,7 @@ import {SOCIAL_STATUS_COLOR} from "../../server/db/schemas/social-posts";
 import {SocialComposer} from "../../widgets/white-label/social-composer";
 import {SocialPostHistory} from "../../widgets/white-label/social-post-history";
 import {EmptyState} from "../../widgets/empty-state";
-import {PageToolbar} from "../../widgets/white-label/page-toolbar";
+import {PageToolbar} from "../../widgets/page-toolbar";
 
 const COLUMN_ORDER: readonly SocialStatus[] = [
   "Draft",

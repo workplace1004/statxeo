@@ -34,7 +34,7 @@ import {useState} from "react";
 
 import {notifyInfo, notifySuccess} from "../../lib/ui/white-label-notify";
 import {EmptyState} from "../../widgets/empty-state";
-import {PageToolbar} from "../../widgets/white-label/page-toolbar";
+import {PageToolbar} from "../../widgets/page-toolbar";
 
 const SERVICE_ICON = {
   automation: Rocket,

@@ -7,7 +7,7 @@ import {ArrowRightFromSquare, Book, Comment, LifeRing, Sparkles, Video} from "@g
 import {Accordion, Card, Link, SearchField} from "@heroui/react";
 import {useMemo, useState} from "react";
 
-import {PageToolbar} from "../../widgets/white-label/page-toolbar";
+import {PageToolbar} from "../../widgets/page-toolbar";
 
 type HelpLink = {
   description: string;

@@ -11,6 +11,7 @@ import {useMemo} from "react";
 import {notifyInfo, notifySuccess} from "../../lib/ui/white-label-notify";
 import {INVOICE_STATUS_COLOR} from "../../server/db/schemas/invoices";
 import {EmptyState} from "../../widgets/empty-state";
+import {PageToolbar} from "../../widgets/page-toolbar";
 
 export interface CustomerBillingPageProps {
   invoices: InvoiceCustomer[];
@@ -105,9 +106,11 @@ export function CustomerBillingPage({invoices}: CustomerBillingPageProps) {
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 pb-10 pt-4">
-      <p className="text-muted text-sm">
-        Manage your StatXEO subscription, track usage, and download invoices.
-      </p>
+      <PageToolbar
+        title="Billing"
+        description="Manage your StatXEO subscription, track usage, and download invoices."
+        showPeriod={false}
+      />
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
         <Card className="rounded-2xl lg:col-span-2">

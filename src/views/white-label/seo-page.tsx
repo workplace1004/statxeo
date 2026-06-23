@@ -22,7 +22,7 @@ import {IconButton} from "../../components/icon-button";
 import {EmptyState} from "../../widgets/empty-state";
 import {TrackKeywordModal} from "../../widgets/white-label/modals/track-keyword-modal";
 import {AddCompetitorModal} from "../../widgets/white-label/modals/add-competitor-modal";
-import {PageToolbar} from "../../widgets/white-label/page-toolbar";
+import {PageToolbar} from "../../widgets/page-toolbar";
 
 function intentColor(intent: Keyword["intent"]): "success" | "warning" | "default" | "accent" {
   switch (intent) {

@@ -15,7 +15,7 @@ import {InviteCustomerModal} from "../../widgets/white-label/modals/invite-custo
 import {NewCustomerButton} from "../../widgets/white-label/modals/new-customer-modal";
 import {CampaignPerformanceCard} from "../../widgets/white-label/campaign-performance-card";
 import {CustomersPreviewCard} from "../../widgets/white-label/customers-preview-card";
-import {PageToolbar} from "../../widgets/white-label/page-toolbar";
+import {PageToolbar} from "../../widgets/page-toolbar";
 import {PendingApprovalsCard} from "../../widgets/white-label/pending-approvals-card";
 import {RevenueChartCard} from "../../widgets/white-label/revenue-chart-card";
 import {RevenueKpiRow} from "../../widgets/white-label/revenue-kpi-row";

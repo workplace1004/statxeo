@@ -25,7 +25,7 @@ import {
 import {WebsiteOptionsModal} from "../../widgets/white-label/modals/website-options-modal";
 import {SITE_STATUS_COLOR} from "../../server/db/schemas/sites";
 import {EmptyState} from "../../widgets/empty-state";
-import {PageToolbar} from "../../widgets/white-label/page-toolbar";
+import {PageToolbar} from "../../widgets/page-toolbar";
 
 export interface WhiteLabelWebsitesPageProps {
   sites: Site[];

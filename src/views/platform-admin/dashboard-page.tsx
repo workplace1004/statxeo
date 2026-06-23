@@ -5,7 +5,7 @@ import {Button, Card, Chip} from "@heroui/react";
 import {useState} from "react";
 
 import type {AgencyData} from "../../server/queries/platform";
-import {PageToolbar} from "../../widgets/white-label/page-toolbar";
+import {PageToolbar} from "../../widgets/page-toolbar";
 
 export interface PlatformAdminDashboardPageProps {
   agencies: AgencyData[];

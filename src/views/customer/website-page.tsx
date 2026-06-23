@@ -5,13 +5,14 @@ import type {DataGridColumn} from "@heroui-pro/react";
 
 import {ArrowUpRightFromSquare, Display, FileText, Plus, Sparkles} from "@gravity-ui/icons";
 import {Button, Card, Chip, useOverlayState} from "@heroui/react";
-import {DataGrid, KPI, NumberValue} from "@heroui-pro/react";
+import {DataGrid, KPI, KPIGroup, NumberValue} from "@heroui-pro/react";
 import {useEffect, useMemo} from "react";
 import {useRouter} from "next/navigation";
 
 import {notifyInfo} from "../../lib/ui/white-label-notify";
 import {PAGE_STATUS_COLORS} from "../../server/db/schemas/website-pages";
 import {AutomationBanner} from "../../widgets/customer/automation-banner";
+import {PageToolbar} from "../../widgets/page-toolbar";
 import {
   GeneratePageModal,
   NewPageButton,
@@ -144,72 +145,102 @@ export function CustomerWebsitePage({pages, projectId, projectStatus}: CustomerW
     {label: "Published", value: publishedCount, format: "decimal" as const, fractionDigits: 0},
     {label: "Drafts", value: draftCount, format: "decimal" as const, fractionDigits: 0},
     {label: "Total views", value: totalViews, format: "decimal" as const, fractionDigits: 0},
-  ];
-
-  return (
+  ];  return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 pb-10 pt-4">
       <AutomationBanner message="AI generates pages in your brand voice" />
       {isGenerating && projectId && (
         <GenerationPoller projectId={projectId} status={projectStatus ?? "generating"} />
       )}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-muted text-sm">
-          Your website on StatXEO — pages, blog posts, and AI-generated content.
-        </p>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="tertiary"
-            onPress={() => notifyInfo("Live preview opens when your site is published")}
-          >
-            <Display className="size-4" />
-            Preview live
-          </Button>
-          <GeneratePageModal
-            state={generateState}
-            trigger={
-              <Button size="sm">
-                <Sparkles className="size-4" />
-                Generate page
-              </Button>
-            }
-          />
-        </div>
-      </div>
+      
+      <PageToolbar
+        title="Website"
+        description="Your website on StatXEO — pages, blog posts, and AI-generated content."
+        showPeriod={false}
+        trailing={
+          <>
+            <Button
+              size="sm"
+              variant="tertiary"
+              onPress={() => notifyInfo("Live preview opens when your site is published")}
+            >
+              <Display className="size-4" />
+              Preview live
+            </Button>
+            <GeneratePageModal
+              state={generateState}
+              trigger={
+                <Button size="sm">
+                  <Sparkles className="size-4" />
+                  Generate page
+                </Button>
+              }
+            />
+          </>
+        }
+      />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {kpis.map((kpi) => (
-          <KPI key={kpi.label}>
-            <KPI.Header>
-              <KPI.Title>{kpi.label}</KPI.Title>
-            </KPI.Header>
-            <KPI.Content>
-              {pages.length === 0 && kpi.label !== "Pages" ? (
-                <span className="text-foreground text-2xl font-semibold tabular-nums">—</span>
-              ) : (
-                <KPI.Value
-                  maximumFractionDigits={kpi.fractionDigits}
-                  style={kpi.format}
-                  value={kpi.value}
-                />
-              )}
-            </KPI.Content>
-          </KPI>
-        ))}
-      </div>
-
-      <KPI>
-        <KPI.Header>
-          <KPI.Title>Avg conversion</KPI.Title>
-        </KPI.Header>
-        <KPI.Content>
-          {pages.length === 0 ? (
-            <span className="text-foreground text-2xl font-semibold tabular-nums">—</span>
-          ) : (
-            <KPI.Value maximumFractionDigits={1} style="percent" value={avgConversion / 100} />
-          )}
-        </KPI.Content>
-      </KPI>
+      <KPIGroup>
+        <KPI>
+          <KPI.Header>
+            <KPI.Title>Pages</KPI.Title>
+          </KPI.Header>
+          <KPI.Content>
+            <KPI.Value value={pages.length} maximumFractionDigits={0} />
+          </KPI.Content>
+        </KPI>
+        <KPIGroup.Separator />
+        <KPI>
+          <KPI.Header>
+            <KPI.Title>Published</KPI.Title>
+          </KPI.Header>
+          <KPI.Content>
+            {pages.length === 0 ? (
+              <span className="text-foreground text-2xl font-semibold tabular-nums">—</span>
+            ) : (
+              <KPI.Value value={publishedCount} maximumFractionDigits={0} />
+            )}
+          </KPI.Content>
+        </KPI>
+        <KPIGroup.Separator />
+        <KPI>
+          <KPI.Header>
+            <KPI.Title>Drafts</KPI.Title>
+          </KPI.Header>
+          <KPI.Content>
+            {pages.length === 0 ? (
+              <span className="text-foreground text-2xl font-semibold tabular-nums">—</span>
+            ) : (
+              <KPI.Value value={draftCount} maximumFractionDigits={0} />
+            )}
+          </KPI.Content>
+        </KPI>
+        <KPIGroup.Separator />
+        <KPI>
+          <KPI.Header>
+            <KPI.Title>Total views</KPI.Title>
+          </KPI.Header>
+          <KPI.Content>
+            {pages.length === 0 ? (
+              <span className="text-foreground text-2xl font-semibold tabular-nums">—</span>
+            ) : (
+              <KPI.Value value={totalViews} maximumFractionDigits={0} />
+            )}
+          </KPI.Content>
+        </KPI>
+        <KPIGroup.Separator />
+        <KPI>
+          <KPI.Header>
+            <KPI.Title>Avg conversion</KPI.Title>
+          </KPI.Header>
+          <KPI.Content>
+            {pages.length === 0 ? (
+              <span className="text-foreground text-2xl font-semibold tabular-nums">—</span>
+            ) : (
+              <KPI.Value value={avgConversion / 100} maximumFractionDigits={1} style="percent" />
+            )}
+          </KPI.Content>
+        </KPI>
+      </KPIGroup>
 
       {pages.length > 0 ? (
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">

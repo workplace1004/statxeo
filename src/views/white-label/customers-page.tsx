@@ -26,7 +26,7 @@ import {
   CUSTOMER_STATUS_COLOR,
 } from "../../server/db/schemas/customers";
 import {EmptyState} from "../../widgets/empty-state";
-import {PageToolbar} from "../../widgets/white-label/page-toolbar";
+import {PageToolbar} from "../../widgets/page-toolbar";
 
 const RELATIVE_FORMATTER = new Intl.RelativeTimeFormat("en-US", {numeric: "auto"});
 
