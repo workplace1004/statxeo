@@ -406,6 +406,40 @@ export async function publishAndDraftSocial(
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function generateKeywordStrategy(intent: string): Promise<KeywordStrategy> {
+  if (!process.env.OPENAI_API_KEY) {
+    console.warn("[local-seo] OPENAI_API_KEY is missing. Falling back to mock keyword strategy.");
+    return {
+      primaryKeywords: [
+        `${intent} repair`,
+        `best ${intent} service`,
+        `affordable ${intent}`,
+        `local ${intent} company`
+      ],
+      geoTargets: ["Chicago", "Naperville", "Evanston", "Oak Park"],
+      suggestedPages: [
+        {
+          title: `Professional ${intent} Services in Chicago`,
+          targetKeyword: `best ${intent} service`,
+          location: "Chicago",
+          description: `A landing page highlighting top-tier ${intent} solutions for residential clients.`
+        },
+        {
+          title: `Emergency ${intent} Experts in Naperville`,
+          targetKeyword: `${intent} repair`,
+          location: "Naperville",
+          description: `Emergency response page for urgent ${intent} repairs.`
+        },
+        {
+          title: `Affordable Local ${intent} Solutions`,
+          targetKeyword: `affordable ${intent}`,
+          location: "Evanston",
+          description: `Budget-friendly pricing and service packages for local ${intent}.`
+        }
+      ],
+      reasoning: `This strategy targets high-volume search terms like "${intent} repair" and couples them with key local service areas to drive conversions.`
+    };
+  }
+
   const result = await generateObject({
     model: openai("gpt-4o"),
     system: `You are an expert local SEO strategist. Your job is to create a keyword strategy and suggest pages based on the client's intent. 
@@ -432,6 +466,30 @@ async function generatePageContent(
   strategy: KeywordStrategy,
   clientOrgId: string,
 ): Promise<GeneratedPageContent[]> {
+  if (!process.env.OPENAI_API_KEY) {
+    console.warn("[local-seo] OPENAI_API_KEY is missing. Falling back to mock page content generation.");
+    return strategy.suggestedPages.map((p) => ({
+      title: p.title,
+      targetKeyword: p.targetKeyword,
+      location: p.location,
+      slug: p.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""),
+      metaTitle: `${p.title} | Top Rated Provider`,
+      metaDescription: `Get the best ${p.targetKeyword} in ${p.location}. Certified experts, fast response, and affordable pricing. Contact us today!`,
+      h1: p.title,
+      bodyHtml: `
+        <h2>Expert ${p.targetKeyword} in ${p.location}</h2>
+        <p>Looking for reliable, professional assistance with <strong>${p.targetKeyword}</strong>? Our experienced team is ready to serve clients in ${p.location} and the surrounding areas.</p>
+        <h3>Why Choose Our Team?</h3>
+        <ul>
+          <li><strong>Experienced Professionals:</strong> Certified technicians who understand local needs.</li>
+          <li><strong>Affordable Pricing:</strong> Competitive rates with transparent, upfront quotes.</li>
+          <li><strong>Quality Guarantee:</strong> We stand behind our workmanship on every job.</li>
+        </ul>
+        <p>Contact us today to schedule your service or speak to one of our advisors about your project!</p>
+      `
+    }));
+  }
+
   const result = await generateObject({
     model: openai("gpt-4o"),
     system: `You are an expert SEO copywriter. You have been given a Local SEO strategy containing a list of pages to create.
