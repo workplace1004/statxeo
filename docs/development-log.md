@@ -573,4 +573,37 @@ Identified and resolved a role escalation vulnerability where Agency Admins coul
 - **Mock Fallback Resiliency**: Added robust fallback keyword research and content generators when `OPENAI_API_KEY` is not present in environment configs, enabling complete local testing of the 6-Scene UI flow without runtime crashes.
 - **TypeScript**: Ran project-wide compilation checks (`pnpm typecheck`) and confirmed **zero errors** or warnings.
 
+---
+
+### June 23, 2026: Shared PageToolbar Refactoring & Customer Portal HeroUI PRO Upgrades (Branch: feat/customer-ui-heroui-pro)
+
+#### 1. PageToolbar Global Shared Refactoring
+- **PageToolbar Refactoring**: Moved `src/widgets/white-label/page-toolbar.tsx` to `src/widgets/page-toolbar.tsx` to act as a globally shared header widget across both the Reseller (White-Label) and Customer portals.
+- **Import Realignment**: Updated import paths referencing `widgets/white-label/page-toolbar` to the new shared location across all relevant views, including campaigns, social, team, websites, settings, onboarding, integrations, help, dashboard, customers, branding, automation, billing, analytics, and platform-admin pages.
+
+#### 2. Customer Portal Dashboard & Metrics Upgrades
+- **Customer Dashboard ([dashboard-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/customer/dashboard-page.tsx))**: Replaced the custom welcome row banner with the shared `PageToolbar`, implementing clean status checks and action controls.
+- **Customer Websites ([website-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/customer/website-page.tsx))**: Injected the shared `PageToolbar` and grouped all pages, views, drafts, and conversion stats into a unified `KPIGroup` with structural separators.
+- **Customer Analytics ([analytics-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/customer/analytics-page.tsx))**: Replaced the manual sub-navigation headers with the shared `PageToolbar` layout, nesting the segment range control and CSV export trigger inside the toolbar actions. Refactored analytics KPIs into a clean `KPIGroup`.
+- **Customer Billing ([billing-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/customer/billing-page.tsx))**: Injected the shared `PageToolbar` at the top of the billing page layout, replacing the legacy plain text description block.
+
+#### 3. Verification & Push
+- **TypeScript**: Ran project-wide compilation checks (`pnpm typecheck`) and confirmed zero errors or warnings.
+- **Sync**: Staged, committed, and pushed the updates directly to the remote repository.
+
+---
+
+### June 24, 2026: Customer Support Page HeroUI PRO Upgrade (Branch: feat/customer-ui-heroui-pro)
+
+#### 1. PageToolbar & DataGrid Support Integration
+- **Support View ([support-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/customer/support-page.tsx))**: Relocated header structures to the unified `PageToolbar`.
+- **DataGrid for Tickets**: Converted the custom list of support tickets into a premium `DataGrid` from `@heroui-pro/react`, implementing columns for Subject & Preview, status chips, assignee info, and action links.
+
+#### 2. Database-Backed Operations Verification
+- Verified that all upgraded views (dashboard, website pages, analytics, billing, and support tickets) load their data from live MongoDB queries using Connection Pooling (`collections`), confirming no local mock states or hardcoded placeholders are utilized in the UI views.
+
+#### 3. Verification & Push
+- **TypeScript**: Executed `pnpm typecheck` successfully with no compiler issues.
+- **Sync**: Committed and pushed the changes to the `feat/customer-ui-heroui-pro` branch on GitHub.
+
 
