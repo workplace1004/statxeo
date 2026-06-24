@@ -593,17 +593,17 @@ Identified and resolved a role escalation vulnerability where Agency Admins coul
 
 ---
 
-### June 24, 2026: Customer Support Page HeroUI PRO Upgrade (Branch: feat/customer-ui-heroui-pro)
+### June 24, 2026: Customer & Affiliate Support Page HeroUI PRO Upgrades (Branch: feat/customer-ui-heroui-pro)
 
 #### 1. PageToolbar & DataGrid Support Integration
-- **Support View ([support-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/customer/support-page.tsx))**: Relocated header structures to the unified `PageToolbar`.
-- **DataGrid for Tickets**: Converted the custom list of support tickets into a premium `DataGrid` from `@heroui-pro/react`, implementing columns for Subject & Preview, status chips, assignee info, and action links.
+- **Customer Support View ([support-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/customer/support-page.tsx))**: Relocated header structures to the unified `PageToolbar`. Converted the custom list of support tickets into a premium `DataGrid` from `@heroui-pro/react`, implementing columns for Subject & Preview, status chips, assignee info, and action links.
+- **Affiliate Support View ([support-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/affiliate/support-page.tsx))**: Relocated the header to the unified `PageToolbar`. Upgraded the manual ticket mapping to a premium `DataGrid` component, structuring columns for Ticket details (combining reference, subject, and last message), Status chips, Category chips, Last Update timestamps, and Action links.
+- **Interactive Knowledge Base (Affiliate)**: Upgraded static article rows to interactive hover-button components with `ArrowUpRightFromSquare` icons, aligning the design with the customer guides.
 
 #### 2. Database-Backed Operations Verification
 - Verified that all upgraded views (dashboard, website pages, analytics, billing, and support tickets) load their data from live MongoDB queries using Connection Pooling (`collections`), confirming no local mock states or hardcoded placeholders are utilized in the UI views.
 
 #### 3. Verification & Push
 - **TypeScript**: Executed `pnpm typecheck` successfully with no compiler issues.
-- **Sync**: Committed and pushed the changes to the `feat/customer-ui-heroui-pro` branch on GitHub.
-
+- **Sync**: Staged, committed, and pushed the changes to the `feat/customer-ui-heroui-pro` branch on GitHub.
 
