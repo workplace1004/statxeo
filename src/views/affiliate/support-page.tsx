@@ -6,12 +6,16 @@ import type {
   KnowledgeArticle,
 } from "../../server/db/schemas/support-tickets";
 
-import {Book, LifeRing} from "@gravity-ui/icons";
+import {ArrowUpRightFromSquare, Book, LifeRing} from "@gravity-ui/icons";
 import {Accordion, Button, Card, Chip} from "@heroui/react";
+import {DataGrid} from "@heroui-pro/react";
+import type {DataGridColumn} from "@heroui-pro/react";
+import {useMemo} from "react";
 
 import {notifyInfo} from "../../lib/ui/white-label-notify";
 import {AFFILIATE_TICKET_STATUS_COLORS} from "../../server/db/schemas/support-tickets";
 import {NewSupportTicketButton} from "../../widgets/affiliate/modals/new-support-ticket-modal";
+import {PageToolbar} from "../../widgets/page-toolbar";
 import {EmptyState} from "../../widgets/empty-state";
 
 export interface AffiliateSupportPageProps {
@@ -21,14 +25,82 @@ export interface AffiliateSupportPageProps {
 }
 
 export function AffiliateSupportPage({articles, faqs, tickets}: AffiliateSupportPageProps) {
+  const columns = useMemo<DataGridColumn<AffiliateSupportTicket>[]>(
+    () => [
+      {
+        accessorKey: "subject",
+        cell: (item) => (
+          <div className="flex min-w-0 flex-col py-0.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-foreground text-xs font-semibold tabular-nums">
+                {item.reference}
+              </span>
+              <span className="text-foreground text-sm font-medium leading-normal">{item.subject}</span>
+            </div>
+            <span className="text-muted text-xs leading-normal line-clamp-1">{item.lastMessage}</span>
+          </div>
+        ),
+        header: "Ticket",
+        id: "subject",
+        isRowHeader: true,
+        minWidth: 280,
+      },
+      {
+        accessorKey: "status",
+        cell: (item) => (
+          <Chip color={AFFILIATE_TICKET_STATUS_COLORS[item.status]} size="sm" variant="soft">
+            {item.status}
+          </Chip>
+        ),
+        header: "Status",
+        id: "status",
+        minWidth: 120,
+      },
+      {
+        accessorKey: "category",
+        cell: (item) => (
+          <Chip color="default" size="sm" variant="soft">
+            {item.category}
+          </Chip>
+        ),
+        header: "Category",
+        id: "category",
+        minWidth: 120,
+      },
+      {
+        accessorKey: "updatedAt",
+        cell: (item) => <span className="text-muted text-xs">{item.updatedAt}</span>,
+        header: "Last Update",
+        id: "updatedAt",
+        minWidth: 150,
+      },
+      {
+        align: "end",
+        cell: (item) => (
+          <Button
+            size="sm"
+            variant="tertiary"
+            onPress={() => notifyInfo(`Opening ticket “${item.subject}”`)}
+          >
+            Open
+          </Button>
+        ),
+        header: "Actions",
+        id: "actions",
+        minWidth: 100,
+      },
+    ],
+    [],
+  );
+
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 pb-10 pt-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-muted text-sm">
-          Get help fast — search the docs, ping your manager, or open a ticket.
-        </p>
-        <NewSupportTicketButton />
-      </div>
+    <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 pb-10 pt-4">
+      <PageToolbar
+        title="Support & Help"
+        description="Get help fast — search the docs, ping your manager, or open a ticket."
+        showPeriod={false}
+        trailing={<NewSupportTicketButton />}
+      />
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
         <Card className="rounded-2xl">
@@ -98,7 +170,7 @@ export function AffiliateSupportPage({articles, faqs, tickets}: AffiliateSupport
           <Card.Title className="text-base">Your tickets</Card.Title>
           <Card.Description>Track open conversations with the StatXEO team.</Card.Description>
         </Card.Header>
-        <Card.Content className="flex flex-col gap-2">
+        <Card.Content>
           {tickets.length === 0 ? (
             <EmptyState
               body="Open a ticket below and our partner team will jump in."
@@ -106,27 +178,13 @@ export function AffiliateSupportPage({articles, faqs, tickets}: AffiliateSupport
               title="No support tickets yet"
             />
           ) : (
-            tickets.map((tk) => (
-              <div
-                key={tk.id}
-                className="border-content2 bg-content1 flex flex-col gap-1 rounded-xl border p-3"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-foreground text-sm font-semibold tabular-nums">
-                    {tk.reference}
-                  </span>
-                  <Chip color={AFFILIATE_TICKET_STATUS_COLORS[tk.status]} size="sm" variant="soft">
-                    {tk.status}
-                  </Chip>
-                  <Chip color="default" size="sm" variant="soft">
-                    {tk.category}
-                  </Chip>
-                  <span className="text-muted ml-auto text-xs">{tk.updatedAt}</span>
-                </div>
-                <span className="text-foreground text-sm font-medium">{tk.subject}</span>
-                <span className="text-muted text-xs">{tk.lastMessage}</span>
-              </div>
-            ))
+            <DataGrid
+              aria-label="Support tickets"
+              columns={columns}
+              contentClassName="min-w-[800px]"
+              data={tickets}
+              getRowId={(item) => item.id}
+            />
           )}
         </Card.Content>
       </Card>
@@ -168,23 +226,27 @@ export function AffiliateSupportPage({articles, faqs, tickets}: AffiliateSupport
             <Card.Title className="text-base">Knowledge base</Card.Title>
             <Card.Description>Deeper guides curated for affiliate partners.</Card.Description>
           </Card.Header>
-          <Card.Content className="flex flex-col gap-2">
-            {articles.map((article) => (
-              <div
-                key={article.id}
-                className="border-content2 bg-content1 flex items-center justify-between gap-3 rounded-xl border p-3"
-              >
-                <div className="flex min-w-0 flex-col">
-                  <span className="text-foreground truncate text-sm font-medium">
-                    {article.title}
-                  </span>
-                  <span className="text-muted truncate text-xs">{article.category}</span>
-                </div>
-                <span className="text-muted text-xs tabular-nums">
-                  {article.readMinutes} min read
-                </span>
-              </div>
-            ))}
+          <Card.Content>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {articles.map((article) => (
+                <button
+                  key={article.id}
+                  className="hover:bg-content2 flex w-full items-center justify-between gap-3 rounded-xl p-3 text-left"
+                  type="button"
+                  onClick={() =>
+                    notifyInfo(`Opening “${article.title}” in the knowledge base`)
+                  }
+                >
+                  <div className="flex flex-col">
+                    <span className="text-foreground text-sm font-medium">{article.title}</span>
+                    <span className="text-muted text-xs">
+                      {article.category} · {article.readMinutes} min read
+                    </span>
+                  </div>
+                  <ArrowUpRightFromSquare className="text-muted size-4" />
+                </button>
+              ))}
+            </div>
           </Card.Content>
         </Card>
       ) : null}
