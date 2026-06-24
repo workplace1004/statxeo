@@ -7,6 +7,9 @@ import type {
 
 import {ArrowUpRightFromSquare, Book, Comment, LifeRing} from "@gravity-ui/icons";
 import {Button, Card, Chip, useOverlayState} from "@heroui/react";
+import {DataGrid} from "@heroui-pro/react";
+import type {DataGridColumn} from "@heroui-pro/react";
+import {useMemo} from "react";
 
 import {notifyInfo, notifySuccess} from "../../lib/ui/white-label-notify";
 import {CUSTOMER_TICKET_STATUS_COLORS} from "../../server/db/schemas/support-tickets";
@@ -14,6 +17,7 @@ import {
   NewSupportTicketButton,
   NewSupportTicketModal,
 } from "../../widgets/customer/modals/new-support-ticket-modal";
+import {PageToolbar} from "../../widgets/page-toolbar";
 import {EmptyState} from "../../widgets/empty-state";
 
 export interface CustomerSupportPageProps {
@@ -24,14 +28,73 @@ export interface CustomerSupportPageProps {
 export function CustomerSupportPage({articles, tickets}: CustomerSupportPageProps) {
   const ticketState = useOverlayState();
 
+  const columns = useMemo<DataGridColumn<CustomerSupportTicket>[]>(
+    () => [
+      {
+        accessorKey: "subject",
+        cell: (item) => (
+          <div className="flex min-w-0 flex-col py-0.5">
+            <span className="text-foreground text-sm font-medium leading-normal">{item.subject}</span>
+            <span className="text-muted text-xs leading-normal line-clamp-1">{item.excerpt}</span>
+          </div>
+        ),
+        header: "Ticket",
+        id: "subject",
+        isRowHeader: true,
+        minWidth: 280,
+      },
+      {
+        accessorKey: "status",
+        cell: (item) => (
+          <Chip color={CUSTOMER_TICKET_STATUS_COLORS[item.status]} size="sm" variant="soft">
+            {item.status}
+          </Chip>
+        ),
+        header: "Status",
+        id: "status",
+        minWidth: 120,
+      },
+      {
+        accessorKey: "assignee",
+        cell: (item) => <span className="text-muted text-sm">{item.assignee}</span>,
+        header: "Assignee",
+        id: "assignee",
+        minWidth: 150,
+      },
+      {
+        accessorKey: "lastUpdate",
+        cell: (item) => <span className="text-muted text-xs">{item.lastUpdate}</span>,
+        header: "Last Update",
+        id: "lastUpdate",
+        minWidth: 150,
+      },
+      {
+        align: "end",
+        cell: (item) => (
+          <Button
+            size="sm"
+            variant="tertiary"
+            onPress={() => notifyInfo(`Opening ticket “${item.subject}”`)}
+          >
+            Open
+          </Button>
+        ),
+        header: "Actions",
+        id: "actions",
+        minWidth: 100,
+      },
+    ],
+    [],
+  );
+
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 pb-10 pt-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-muted text-sm">
-          Get help, browse guides, or chat with the StatXEO team.
-        </p>
-        <NewSupportTicketButton />
-      </div>
+      <PageToolbar
+        title="Support & Help"
+        description="Get help, browse guides, or chat with the StatXEO team."
+        showPeriod={false}
+        trailing={<NewSupportTicketButton />}
+      />
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
         <Card className="rounded-2xl">
@@ -92,7 +155,7 @@ export function CustomerSupportPage({articles, tickets}: CustomerSupportPageProp
           <Card.Title className="text-base">Your tickets</Card.Title>
           <Card.Description>Open and recently resolved support tickets.</Card.Description>
         </Card.Header>
-        <Card.Content className="flex flex-col gap-2">
+        <Card.Content>
           {tickets.length === 0 ? (
             <EmptyState
               body="Need help? Open a ticket and the StatXEO team will jump in."
@@ -101,36 +164,13 @@ export function CustomerSupportPage({articles, tickets}: CustomerSupportPageProp
               title="No tickets yet"
             />
           ) : (
-            tickets.map((ticket) => (
-              <div
-                key={ticket.id}
-                className="hover:bg-content2 flex items-start justify-between gap-3 rounded-xl p-3"
-              >
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-foreground text-sm font-medium">{ticket.subject}</span>
-                    <Chip
-                      color={CUSTOMER_TICKET_STATUS_COLORS[ticket.status]}
-                      size="sm"
-                      variant="soft"
-                    >
-                      {ticket.status}
-                    </Chip>
-                  </div>
-                  <span className="text-muted line-clamp-1 text-xs">{ticket.excerpt}</span>
-                  <span className="text-muted text-xs">
-                    Assigned to {ticket.assignee} · Last update {ticket.lastUpdate}
-                  </span>
-                </div>
-                <Button
-                  size="sm"
-                  variant="tertiary"
-                  onPress={() => notifyInfo(`Opening ticket “${ticket.subject}”`)}
-                >
-                  Open
-                </Button>
-              </div>
-            ))
+            <DataGrid
+              aria-label="Support tickets"
+              columns={columns}
+              contentClassName="min-w-[800px]"
+              data={tickets}
+              getRowId={(item) => item.id}
+            />
           )}
         </Card.Content>
       </Card>
