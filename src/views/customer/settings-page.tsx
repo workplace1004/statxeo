@@ -31,6 +31,7 @@ import {
   InviteTeamMemberButton,
   InviteTeamMemberModal,
 } from "../../widgets/customer/modals/invite-team-member-modal";
+import {PageToolbar} from "../../widgets/page-toolbar";
 import {EmptyState} from "../../widgets/empty-state";
 
 export interface CustomerSettingsPageProps {
@@ -52,10 +53,12 @@ export function CustomerSettingsPage({
   const domainState = useOverlayState();
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 pb-10 pt-4">
-      <p className="text-muted text-sm">
-        Manage your business profile, team, integrations, and account preferences.
-      </p>
+    <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 pb-10 pt-4">
+      <PageToolbar
+        title="Settings"
+        description="Manage your business profile, team, integrations, and account preferences."
+        showPeriod={false}
+      />
 
       <Tabs defaultSelectedKey="business">
         <Tabs.ListContainer>

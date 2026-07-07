@@ -1,18 +1,26 @@
 "use client";
 
 import {ArrowRightFromSquare, Check, PlugWire, ShieldCheck} from "@gravity-ui/icons";
-import {Button, Card, Chip} from "@heroui/react";
-import {useState} from "react";
+import {Avatar, Button, Card, Chip} from "@heroui/react";
+import {DataGrid} from "@heroui-pro/react";
+import type {DataGridColumn} from "@heroui-pro/react";
+import {useMemo, useState} from "react";
 
 import type {AgencyData} from "../../server/queries/platform";
+import type {Lead} from "../../server/db/schemas/leads";
 import {PageToolbar} from "../../widgets/page-toolbar";
 
 export interface PlatformAdminDashboardPageProps {
   agencies: AgencyData[];
   totalMrr: number;
+  leads: Lead[];
 }
 
-export function PlatformAdminDashboardPage({agencies, totalMrr}: PlatformAdminDashboardPageProps) {
+export function PlatformAdminDashboardPage({
+  agencies,
+  leads,
+  totalMrr,
+}: PlatformAdminDashboardPageProps) {
   const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
   
   const handleImpersonate = async (agencyId: string) => {
@@ -38,6 +46,77 @@ export function PlatformAdminDashboardPage({agencies, totalMrr}: PlatformAdminDa
       setImpersonatingId(null);
     }
   };
+
+  const leadColumns = useMemo<DataGridColumn<Lead>[]>(
+    () => [
+      {
+        accessorKey: "contactName",
+        cell: (item) => (
+          <div className="flex items-center gap-3">
+            <Avatar className="size-8">
+              <Avatar.Image alt={item.contactName} src={item.contactAvatar} />
+              <Avatar.Fallback>
+                {item.contactName
+                  .split(" ")
+                  .map((p) => p[0])
+                  .join("")}
+              </Avatar.Fallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="text-foreground text-sm font-medium">{item.contactName}</span>
+              <span className="text-muted text-xs">{item.contactRole}</span>
+            </div>
+          </div>
+        ),
+        header: "Contact",
+        id: "contactName",
+        isRowHeader: true,
+        minWidth: 200,
+      },
+      {
+        accessorKey: "company",
+        cell: (item) => (
+          <div className="flex flex-col">
+            <span className="text-foreground text-sm font-medium">{item.company}</span>
+            <span className="text-muted text-xs">{item.industry}</span>
+          </div>
+        ),
+        header: "Company",
+        id: "company",
+        minWidth: 150,
+      },
+      {
+        accessorKey: "dealValue",
+        cell: (item) => (
+          <span className="text-foreground text-sm font-semibold tabular-nums">
+            ${item.dealValue.toLocaleString()}
+          </span>
+        ),
+        header: "Value",
+        id: "dealValue",
+        minWidth: 100,
+      },
+      {
+        accessorKey: "stage",
+        cell: (item) => (
+          <Chip color={item.tag.color} size="sm" variant="soft">
+            {item.stage}
+          </Chip>
+        ),
+        header: "Stage",
+        id: "stage",
+        minWidth: 120,
+      },
+      {
+        accessorKey: "source",
+        cell: (item) => <span className="text-muted text-xs">{item.source}</span>,
+        header: "Source",
+        id: "source",
+        minWidth: 120,
+      },
+    ],
+    [],
+  );
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 pb-10 pt-4">
@@ -157,6 +236,29 @@ export function PlatformAdminDashboardPage({agencies, totalMrr}: PlatformAdminDa
           )}
         </Card.Content>
       </Card>
+
+      {/* Leads List Card */}
+      <Card className="rounded-2xl">
+        <Card.Header className="px-6 pt-5 pb-3">
+          <h3 className="text-lg font-semibold">Recent Leads</h3>
+        </Card.Header>
+        <Card.Content className="px-6 pb-6">
+          {leads.length === 0 ? (
+            <p className="text-muted py-10 text-center text-sm">
+              No leads have been registered yet.
+            </p>
+          ) : (
+            <DataGrid
+              aria-label="Recent Leads"
+              columns={leadColumns}
+              contentClassName="min-w-[800px]"
+              data={leads}
+              getRowId={(item) => item.id}
+            />
+          )}
+        </Card.Content>
+      </Card>
     </div>
   );
 }
+

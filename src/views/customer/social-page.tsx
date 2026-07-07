@@ -4,7 +4,7 @@ import type {SocialPlatform, SocialPostCustomer} from "../../server/db/schemas/s
 
 import {Calendar, ChartLine, Megaphone, Plus, Sparkles} from "@gravity-ui/icons";
 import {Button, Card, Chip, useOverlayState} from "@heroui/react";
-import {KPI} from "@heroui-pro/react";
+import {KPI, KPIGroup} from "@heroui-pro/react";
 import {useState} from "react";
 
 import {notifyInfo} from "../../lib/ui/white-label-notify";
@@ -14,6 +14,7 @@ import {
   GeneratePostModal,
   NewPostButton,
 } from "../../widgets/customer/modals/generate-post-modal";
+import {PageToolbar} from "../../widgets/page-toolbar";
 import {EmptyState} from "../../widgets/empty-state";
 
 export interface CustomerSocialPageProps {
@@ -61,33 +62,34 @@ export function CustomerSocialPage({posts}: CustomerSocialPageProps) {
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 pb-10 pt-4">
       <AutomationBanner message="AI generates and schedules posts automatically" />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-muted text-sm">
-          Plan, schedule, and analyze your social posts across Facebook, Instagram, and Google
-          Business.
-        </p>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant={isCalendarView ? "secondary" : "tertiary"}
-            onPress={() => setIsCalendarView((v) => !v)}
-          >
-            <Calendar className="size-4" />
-            {isCalendarView ? "List view" : "Calendar view"}
-          </Button>
-          <GeneratePostModal
-            state={composeState}
-            trigger={
-              <Button size="sm">
-                <Sparkles className="size-4" />
-                Generate posts
-              </Button>
-            }
-          />
-        </div>
-      </div>
+      <PageToolbar
+        title="Social Media"
+        description="Plan, schedule, and analyze your social posts across Facebook, Instagram, and Google Business."
+        showPeriod={false}
+        trailing={
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant={isCalendarView ? "secondary" : "tertiary"}
+              onPress={() => setIsCalendarView((v) => !v)}
+            >
+              <Calendar className="size-4" />
+              {isCalendarView ? "List view" : "Calendar view"}
+            </Button>
+            <GeneratePostModal
+              state={composeState}
+              trigger={
+                <Button size="sm">
+                  <Sparkles className="size-4" />
+                  Generate posts
+                </Button>
+              }
+            />
+          </div>
+        }
+      />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <KPIGroup>
         <KPI>
           <KPI.Header>
             <KPI.Title>Published this month</KPI.Title>
@@ -96,6 +98,7 @@ export function CustomerSocialPage({posts}: CustomerSocialPageProps) {
             <KPI.Value value={published.length} />
           </KPI.Content>
         </KPI>
+        <KPIGroup.Separator />
         <KPI>
           <KPI.Header>
             <KPI.Title>Total impressions</KPI.Title>
@@ -108,6 +111,7 @@ export function CustomerSocialPage({posts}: CustomerSocialPageProps) {
             )}
           </KPI.Content>
         </KPI>
+        <KPIGroup.Separator />
         <KPI>
           <KPI.Header>
             <KPI.Title>Engagement</KPI.Title>
@@ -120,6 +124,7 @@ export function CustomerSocialPage({posts}: CustomerSocialPageProps) {
             )}
           </KPI.Content>
         </KPI>
+        <KPIGroup.Separator />
         <KPI>
           <KPI.Header>
             <KPI.Title>Scheduled</KPI.Title>
@@ -128,7 +133,7 @@ export function CustomerSocialPage({posts}: CustomerSocialPageProps) {
             <KPI.Value value={scheduled.length} />
           </KPI.Content>
         </KPI>
-      </div>
+      </KPIGroup>
 
       <Card className="rounded-2xl">
         <Card.Header className="flex-row items-center justify-between">

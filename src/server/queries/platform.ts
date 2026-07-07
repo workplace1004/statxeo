@@ -1,5 +1,6 @@
 import {collections} from "../db/collections";
 import {serializeOrganization, type Organization} from "../db/schemas/organizations";
+import {serializeLead, type Lead} from "../db/schemas/leads";
 
 export interface AgencyData extends Organization {
   customerCount: number;
@@ -36,4 +37,10 @@ export async function getPlatformGlobalMrr(): Promise<number> {
   // In a real implementation, this would aggregate billing records.
   // For now, we will just return a mock aggregate.
   return 125000; 
+}
+
+export async function getPlatformLeads(): Promise<Lead[]> {
+  const leadsCol = await collections.leads();
+  const docs = await leadsCol.find({}).sort({ createdAt: -1 }).limit(50).toArray();
+  return docs.map(serializeLead);
 }

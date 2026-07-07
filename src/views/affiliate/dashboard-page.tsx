@@ -21,6 +21,7 @@ import {IconButton} from "../../components/icon-button";
 import {exportRecentReferralsCsv} from "../../lib/export/export-affiliate-csv";
 import {notifyInfo, notifySuccess} from "../../lib/ui/white-label-notify";
 import {ShareLinkModal} from "../../widgets/affiliate/modals/share-link-modal";
+import {PageToolbar} from "../../widgets/page-toolbar";
 import {ClicksTrendCard} from "../../widgets/affiliate/clicks-trend-card";
 import {DashboardKpiRow} from "../../widgets/affiliate/dashboard-kpi-row";
 import {EarningsChartCard} from "../../widgets/affiliate/earnings-chart-card";
@@ -62,72 +63,72 @@ export function AffiliateDashboardPage({
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 pb-10 pt-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col gap-1">
-          <p className="text-muted text-sm">
-            Welcome back — here&apos;s how your affiliate book is performing.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <IconButton
-            label="Refresh data"
-            size="sm"
-            variant="tertiary"
-            onPress={() => notifyInfo("Dashboard refreshed")}
-          >
-            <ArrowsRotateLeft className="size-4" />
-          </IconButton>
-          <Button
-            size="sm"
-            variant="tertiary"
-            onPress={() => {
-              exportRecentReferralsCsv(recentReferrals);
-              notifySuccess(
-                recentReferrals.length > 0
-                  ? `Exported ${recentReferrals.length} referrals`
-                  : "Exported referral template (no rows yet)",
-              );
-            }}
-          >
-            <ArrowDownToLine className="size-4" />
-            Export
-          </Button>
-          <ButtonGroup size="sm" variant="tertiary">
-            <Button>
-              <Calendar className="size-4" />
-              {PERIOD_LABELS[period] ?? "Last 30 days"}
+      <PageToolbar
+        title="Dashboard"
+        description="Welcome back — here's how your affiliate book is performing."
+        showPeriod={false}
+        trailing={
+          <>
+            <IconButton
+              label="Refresh data"
+              size="sm"
+              variant="tertiary"
+              onPress={() => notifyInfo("Dashboard refreshed")}
+            >
+              <ArrowsRotateLeft className="size-4" />
+            </IconButton>
+            <Button
+              size="sm"
+              variant="tertiary"
+              onPress={() => {
+                exportRecentReferralsCsv(recentReferrals);
+                notifySuccess(
+                  recentReferrals.length > 0
+                    ? `Exported ${recentReferrals.length} referrals`
+                    : "Exported referral template (no rows yet)",
+                );
+              }}
+            >
+              <ArrowDownToLine className="size-4" />
+              Export
             </Button>
-            <Dropdown>
-              <Button isIconOnly aria-label="Change period" size="sm" variant="tertiary">
-                <ChevronDown className="size-4" />
+            <ButtonGroup size="sm" variant="tertiary">
+              <Button>
+                <Calendar className="size-4" />
+                {PERIOD_LABELS[period] ?? "Last 30 days"}
               </Button>
-              <Dropdown.Popover placement="bottom end">
-                <Dropdown.Menu
-                  selectedKeys={[period]}
-                  onAction={(key) => setPeriod(String(key))}
-                >
-                  {Object.entries(PERIOD_LABELS).map(([id, label]) => (
-                    <Dropdown.Item key={id} id={id} textValue={label}>
-                      <Label>{label}</Label>
-                    </Dropdown.Item>
-                  ))}
-                </Dropdown.Menu>
-              </Dropdown.Popover>
-            </Dropdown>
-          </ButtonGroup>
-          <ShareLinkModal
-            description="Anyone with this link can view a read-only snapshot of your affiliate dashboard."
-            title="Share dashboard"
-            url={dashboardShareUrl}
-            trigger={
-              <Button size="sm">
-                Share dashboard
-                <ArrowUpRightFromSquare className="size-3.5" />
-              </Button>
-            }
-          />
-        </div>
-      </div>
+              <Dropdown>
+                <Button isIconOnly aria-label="Change period" size="sm" variant="tertiary">
+                  <ChevronDown className="size-4" />
+                </Button>
+                <Dropdown.Popover placement="bottom end">
+                  <Dropdown.Menu
+                    selectedKeys={[period]}
+                    onAction={(key) => setPeriod(String(key))}
+                  >
+                    {Object.entries(PERIOD_LABELS).map(([id, label]) => (
+                      <Dropdown.Item key={id} id={id} textValue={label}>
+                        <Label>{label}</Label>
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Menu>
+                </Dropdown.Popover>
+              </Dropdown>
+            </ButtonGroup>
+            <ShareLinkModal
+              description="Anyone with this link can view a read-only snapshot of your affiliate dashboard."
+              title="Share dashboard"
+              url={dashboardShareUrl}
+              trigger={
+                <Button size="sm">
+                  Share dashboard
+                  <ArrowUpRightFromSquare className="size-3.5" />
+                </Button>
+              }
+            />
+          </>
+        }
+      />
 
       <DashboardKpiRow totals={totals} />
 

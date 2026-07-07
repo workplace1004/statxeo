@@ -5,7 +5,7 @@ import type {DataGridColumn} from "@heroui-pro/react";
 
 import {ArrowDown, ArrowUp, Handset, Play, Plus, Xmark} from "@gravity-ui/icons";
 import {Avatar, Button, Card, Chip, SearchField, useOverlayState} from "@heroui/react";
-import {DataGrid, KPI} from "@heroui-pro/react";
+import {DataGrid, KPI, KPIGroup} from "@heroui-pro/react";
 import {useMemo, useState} from "react";
 
 import {copyToClipboard} from "../../lib/ui/copy-to-clipboard";
@@ -14,6 +14,7 @@ import {AutomationBanner} from "../../widgets/customer/automation-banner";
 import {CALL_TAG_COLORS} from "../../server/db/schemas/calls";
 import {AddPhoneButton, AddPhoneModal} from "../../widgets/customer/modals/add-phone-modal";
 import {OutboundCallButton} from "../../widgets/customer/modals/outbound-call-modal";
+import {PageToolbar} from "../../widgets/page-toolbar";
 import {EmptyState} from "../../widgets/empty-state";
 
 export interface CustomerCallingPageProps {
@@ -181,14 +182,14 @@ export function CustomerCallingPage({calls, phones}: CustomerCallingPageProps) {
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 pb-10 pt-4">
       <AutomationBanner message="AI summarizes every call and tags it automatically" />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-muted text-sm">
-          Inbound calls handled by your AI assistant, recordings, and summaries.
-        </p>
-        <OutboundCallButton />
-      </div>
+      <PageToolbar
+        title="Calling"
+        description="Inbound calls handled by your AI assistant, recordings, and summaries."
+        showPeriod={false}
+        trailing={<OutboundCallButton />}
+      />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <KPIGroup>
         <KPI>
           <KPI.Header>
             <KPI.Title>Calls today</KPI.Title>
@@ -197,6 +198,7 @@ export function CustomerCallingPage({calls, phones}: CustomerCallingPageProps) {
             <KPI.Value value={callsToday.length} />
           </KPI.Content>
         </KPI>
+        <KPIGroup.Separator />
         <KPI>
           <KPI.Header>
             <KPI.Title>Booked from calls</KPI.Title>
@@ -205,6 +207,7 @@ export function CustomerCallingPage({calls, phones}: CustomerCallingPageProps) {
             <KPI.Value value={bookedCount} />
           </KPI.Content>
         </KPI>
+        <KPIGroup.Separator />
         <KPI>
           <KPI.Header>
             <KPI.Title>Avg answer time</KPI.Title>
@@ -213,6 +216,7 @@ export function CustomerCallingPage({calls, phones}: CustomerCallingPageProps) {
             <span className="text-foreground text-2xl font-semibold tabular-nums">—</span>
           </KPI.Content>
         </KPI>
+        <KPIGroup.Separator />
         <KPI>
           <KPI.Header>
             <KPI.Title>Talk minutes</KPI.Title>
@@ -221,7 +225,7 @@ export function CustomerCallingPage({calls, phones}: CustomerCallingPageProps) {
             <KPI.Value value={totalMinutes} />
           </KPI.Content>
         </KPI>
-      </div>
+      </KPIGroup>
 
       <Card className="rounded-2xl">
         <Card.Header className="flex-row items-center justify-between">

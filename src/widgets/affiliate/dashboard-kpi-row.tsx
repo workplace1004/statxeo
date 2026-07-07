@@ -1,6 +1,5 @@
-"use client";
-
-import {KPI} from "@heroui-pro/react";
+import {KPI, KPIGroup} from "@heroui-pro/react";
+import React from "react";
 
 export interface DashboardKpiTotals {
   /** Lifetime gross earnings (USD whole dollars). */
@@ -42,26 +41,29 @@ export function DashboardKpiRow({totals}: DashboardKpiRowProps) {
   const kpis = buildKpis(totals);
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-      {kpis.map((kpi) => (
-        <KPI key={kpi.label}>
-          <KPI.Header>
-            <KPI.Title>{kpi.label}</KPI.Title>
-          </KPI.Header>
-          <KPI.Content>
-            {kpi.value === 0 ? (
-              <span className="text-foreground text-2xl font-semibold tabular-nums">—</span>
-            ) : (
-              <KPI.Value
-                currency={kpi.format === "currency" ? "USD" : undefined}
-                maximumFractionDigits={kpi.format === "percent" ? 1 : 0}
-                style={kpi.format}
-                value={kpi.value}
-              />
-            )}
-          </KPI.Content>
-        </KPI>
+    <KPIGroup>
+      {kpis.map((kpi, index) => (
+        <React.Fragment key={kpi.label}>
+          {index > 0 ? <KPIGroup.Separator /> : null}
+          <KPI>
+            <KPI.Header>
+              <KPI.Title>{kpi.label}</KPI.Title>
+            </KPI.Header>
+            <KPI.Content>
+              {kpi.value === 0 ? (
+                <span className="text-foreground text-2xl font-semibold tabular-nums">—</span>
+              ) : (
+                <KPI.Value
+                  currency={kpi.format === "currency" ? "USD" : undefined}
+                  maximumFractionDigits={kpi.format === "percent" ? 1 : 0}
+                  style={kpi.format}
+                  value={kpi.value}
+                />
+              )}
+            </KPI.Content>
+          </KPI>
+        </React.Fragment>
       ))}
-    </div>
+    </KPIGroup>
   );
 }
