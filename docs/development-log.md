@@ -607,3 +607,22 @@ Identified and resolved a role escalation vulnerability where Agency Admins coul
 - **TypeScript**: Executed `pnpm typecheck` successfully with no compiler issues.
 - **Sync**: Staged, committed, and pushed the changes to the `feat/customer-ui-heroui-pro` branch on GitHub.
 
+---
+
+### July 7, 2026: Customer/Affiliate Portal Upgrades & Platform Admin Leads Integration (Branch: feat/customer-ui-heroui-pro)
+
+#### 1. PageToolbar & KPIGroup Migration
+- **Customer Calling View ([calling-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/customer/calling-page.tsx))**: Replaced manual headers with `PageToolbar`. Standardized metrics to `KPIGroup` with dividers and upgraded container to `max-w-7xl`.
+- **Customer Social View ([social-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/customer/social-page.tsx))**: Upgraded headers to `PageToolbar` and consolidated all KPI cards into the unified `KPIGroup`.
+- **Customer Settings View ([settings-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/customer/settings-page.tsx))**: Integrated `PageToolbar` for unified settings view presentation.
+- **Affiliate Dashboard View ([dashboard-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/affiliate/dashboard-page.tsx))**: Upgraded the manual action bar and dashboard headers to the unified `PageToolbar`.
+- **Affiliate Dashboard KPI row ([dashboard-kpi-row.tsx](file:///d:/staxeo%20web/statxeo-main/src/widgets/affiliate/dashboard-kpi-row.tsx))**: Replaced the custom grid structure with the premium `@heroui-pro/react` `KPIGroup` component.
+
+#### 2. Platform Admin Leads Integration
+- **Database Query**: Implemented `getPlatformLeads()` in [platform.ts](file:///d:/staxeo%20web/statxeo-main/src/server/queries/platform.ts) fetching all database leads sorted by `createdAt: -1`.
+- **Admin Dashboard integration**: Loaded database leads via Page controller [page.tsx](file:///d:/staxeo%20web/statxeo-main/src/app/platform-admin/page.tsx) and displayed them inside a premium, searchable/sortable `@heroui-pro/react` `DataGrid` on the [dashboard-page.tsx](file:///d:/staxeo%20web/statxeo-main/src/views/platform-admin/dashboard-page.tsx).
+
+#### 3. Verification & Push
+- **TypeScript**: Ran project-wide compilation checks (`pnpm typecheck`) and confirmed zero errors or warnings.
+- **Sync**: Staged, committed, and pushed all updates directly to `feat/customer-ui-heroui-pro`.
+
